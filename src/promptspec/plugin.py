@@ -40,7 +40,11 @@ class BaselineMismatch(AssertionError):
 
 @pytest.hookimpl(tryfirst=True)
 def pytest_runtest_call(item: pytest.Item) -> None:
-    """Wrap promptspec tests with baseline recording/comparison."""
+    """Wrap promptspec tests with baseline recording/comparison.
+
+    The decorated function's extra parameters (beyond `llm`) are resolved from
+    pytest fixtures, so prompt tests can use tmp_path, monkeypatch, etc.
+    """
     fn = getattr(item, "obj", None)
     if fn is None or not getattr(fn, "_is_promptspec_test", False):
         return
@@ -48,14 +52,26 @@ def pytest_runtest_call(item: pytest.Item) -> None:
     store = item._promptspec_store  # injected in pytest_runtest_setup
     tid = test_id_for(item.nodeid, str(fn._promptspec_model))
 
-    # Rebuild context so we can capture calls
     model_spec = fn._promptspec_model
     model = model_spec if isinstance(model_spec, Model) else Model(model_spec)
     ctx = LLMContext(model=model)
 
-    # Call original unwrapped function with our context
     original = fn.__wrapped__
-    original(ctx)
+    import inspect as _inspect
+
+    sig = _inspect.signature(original)
+    kwargs = {}
+    for name in sig.parameters:
+        if name == "llm":
+            kwargs[name] = ctx
+        elif name in item.funcargs:
+            kwargs[name] = item.funcargs[name]
+        else:
+            raise TypeError(
+                f"promptspec test {item.nodeid}: parameter {name!r} is neither "
+                "'llm' nor an available fixture"
+            )
+    original(**kwargs)
 
     payload: dict[str, Any] = {
         "model": model.spec,

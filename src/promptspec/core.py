@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import functools
+import inspect
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from inspect import Signature
 from typing import Any
 
 from promptspec.models import Model
@@ -44,14 +44,24 @@ def prompt_test(model: str | Model, **model_kwargs: Any) -> Callable:
     """
 
     def decorator(fn: Callable) -> Callable:
-        @functools.wraps(fn)
-        def wrapper() -> Any:
-            m = model if isinstance(model, Model) else Model(model, **model_kwargs)
-            return fn(LLMContext(model=m))
+        sig = inspect.signature(fn)
+        params = [p for p in sig.parameters.values() if p.name != "llm"]
+        # `llm` becomes a **kwargs catch-all (must be last) so pytest collects
+        # fixtures for real params but never resolves `llm` as a fixture.
+        params.append(inspect.Parameter("llm", kind=inspect.Parameter.VAR_KEYWORD))
 
-        # Hide the original signature from pytest: without this, pytest sees the
-        # `llm` parameter (via __wrapped__) and tries to resolve it as a fixture.
-        wrapper.__signature__ = Signature()  # type: ignore[attr-defined]
+        @functools.wraps(fn)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            llm = kwargs.pop("llm", None)
+            if llm is None:
+                m = model if isinstance(model, Model) else Model(model, **model_kwargs)
+                llm = LLMContext(model=m)
+            return fn(llm, *args, **kwargs)
+
+        # Rewrite the visible signature: keep real parameter names so pytest
+        # collects fixtures for them, but make `llm` a **kwargs catch-all so
+        # pytest never tries to resolve it as a fixture (we inject it ourselves).
+        wrapper.__signature__ = sig.replace(parameters=params)  # type: ignore[attr-defined]
         wrapper._promptspec_model = model  # type: ignore[attr-defined]
         wrapper._promptspec_kwargs = model_kwargs  # type: ignore[attr-defined]
         wrapper._is_promptspec_test = True  # type: ignore[attr-defined]
