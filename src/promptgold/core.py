@@ -9,7 +9,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
-from promptspec.models import Model
+from promptgold.models import Model
 
 # The context of the currently-running prompt test, if any. judge() records
 # verdicts here so the plugin can compare them against golden files.
@@ -76,9 +76,9 @@ def prompt_test(model: str | Model, **model_kwargs: Any) -> Callable:
         # collects fixtures for them, but make `llm` a **kwargs catch-all so
         # pytest never tries to resolve it as a fixture (we inject it ourselves).
         wrapper.__signature__ = sig.replace(parameters=params)  # type: ignore[attr-defined]
-        wrapper._promptspec_model = model  # type: ignore[attr-defined]
-        wrapper._promptspec_kwargs = model_kwargs  # type: ignore[attr-defined]
-        wrapper._is_promptspec_test = True  # type: ignore[attr-defined]
+        wrapper._promptgold_model = model  # type: ignore[attr-defined]
+        wrapper._promptgold_kwargs = model_kwargs  # type: ignore[attr-defined]
+        wrapper._is_promptgold_test = True  # type: ignore[attr-defined]
         return wrapper
 
     return decorator

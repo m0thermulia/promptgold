@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-import promptspec.models
+import promptgold.models
 
 
 @pytest.fixture
@@ -27,8 +27,8 @@ def stub_model(monkeypatch):
             return "VERDICT: PASS\nREASON: stub judge approves"
         return state["response"]
 
-    monkeypatch.setattr(promptspec.models.Model, "__init__", fake_init)
-    monkeypatch.setattr(promptspec.models.Model, "complete", fake_complete)
+    monkeypatch.setattr(promptgold.models.Model, "__init__", fake_init)
+    monkeypatch.setattr(promptgold.models.Model, "complete", fake_complete)
 
     def set_response(text: str) -> None:
         state["response"] = text

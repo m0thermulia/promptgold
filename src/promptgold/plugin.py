@@ -7,13 +7,13 @@ from typing import Any
 
 import pytest
 
-from promptspec import golden
-from promptspec.core import LLMContext, set_active_context
-from promptspec.models import Model
+from promptgold import golden
+from promptgold.core import LLMContext, set_active_context
+from promptgold.models import Model
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
-    group = parser.getgroup("promptspec")
+    group = parser.getgroup("promptgold")
     group.addoption(
         "--bless",
         action="store_true",
@@ -42,10 +42,10 @@ def pytest_runtest_call(item: pytest.Item) -> None:
     act on. Raw text is still recorded in the golden file for diffing.
     """
     fn = getattr(item, "obj", None)
-    if fn is None or not getattr(fn, "_is_promptspec_test", False):
+    if fn is None or not getattr(fn, "_is_promptgold_test", False):
         return
 
-    model_spec = fn._promptspec_model
+    model_spec = fn._promptgold_model
     model = model_spec if isinstance(model_spec, Model) else Model(model_spec)
     ctx = LLMContext(model=model)
 
@@ -59,7 +59,7 @@ def pytest_runtest_call(item: pytest.Item) -> None:
             kwargs[name] = item.funcargs[name]
         else:
             raise TypeError(
-                f"promptspec test {item.nodeid}: parameter {name!r} is neither "
+                f"promptgold test {item.nodeid}: parameter {name!r} is neither "
                 "'llm' nor an available fixture"
             )
 
@@ -77,7 +77,7 @@ def pytest_runtest_call(item: pytest.Item) -> None:
 
     if item.config.getoption("--bless"):
         path = golden.save(item.nodeid, payload)
-        print(f"\npromptspec: blessed {path}")
+        print(f"\npromptgold: blessed {path}")
         return
 
     if item.config.getoption("--no-golden-check"):
@@ -87,7 +87,7 @@ def pytest_runtest_call(item: pytest.Item) -> None:
     if expected is None:
         # No golden file yet: pass, but tell the user how to create one.
         print(
-            f"\npromptspec: no golden file for {item.nodeid}. "
+            f"\npromptgold: no golden file for {item.nodeid}. "
             "Run `pytest --bless` and commit the result."
         )
         return
@@ -117,5 +117,5 @@ def _diff_verdicts(expected: list[dict], current: list[dict]) -> list[str]:
 
 def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line(
-        "markers", "promptspec: mark a test as a prompt regression test"
+        "markers", "promptgold: mark a test as a prompt regression test"
     )

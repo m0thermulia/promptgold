@@ -1,6 +1,6 @@
-# Contributing to promptspec
+# Contributing to promptgold
 
-Thanks for your interest! promptspec is deliberately tiny — five concepts, minimal API surface. Keep it that way.
+Thanks for your interest! promptgold is deliberately tiny — five concepts, minimal API surface. Keep it that way.
 
 ## Ground rules
 
@@ -12,8 +12,8 @@ Thanks for your interest! promptspec is deliberately tiny — five concepts, min
 ## Dev setup
 
 ```bash
-git clone https://github.com/rsubundamulia/promptspec
-cd promptspec
+git clone https://github.com/rsubundamulia/promptgold
+cd promptgold
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 pytest tests/          # offline unit tests

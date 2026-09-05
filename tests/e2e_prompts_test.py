@@ -3,7 +3,7 @@
 Uses the stub_model fixture — no API keys, no network.
 """
 
-from promptspec import contains, judge, prompt_test
+from promptgold import contains, judge, prompt_test
 
 
 @prompt_test(model="fake:model")

@@ -1,9 +1,9 @@
-# promptspec
+# promptgold
 
 **pytest for prompts.** Write a test, bless the verdict, catch regressions in CI.
 
 ```python
-from promptspec import prompt_test, judge, contains
+from promptgold import prompt_test, judge, contains
 
 @prompt_test(model="openai:gpt-4o-mini")
 def test_support_stays_empathetic(llm):
@@ -22,20 +22,20 @@ $ pytest                  # later runs fail if a verdict flips PASS -> FAIL
 
 That's it. Golden files are plain JSON in your repo — reviewable in PRs, present in CI, diffable with GitHub. No database, no cloud, no account.
 
-## Why promptspec
+## Why promptgold
 
-You changed a system prompt. Did it break anything? Today the answer is "vibes" — you eyeball a few outputs and ship it. promptspec makes prompt changes testable like code changes:
+You changed a system prompt. Did it break anything? Today the answer is "vibes" — you eyeball a few outputs and ship it. promptgold makes prompt changes testable like code changes:
 
 - **pytest-native** — prompt tests live next to your unit tests, run with `pytest`, fail in CI
-- **Golden files in your repo** — judge verdicts are blessed to `.promptspec/golden/*.json` and committed. CI runners start clean, so baselines must live in version control, not a local database
+- **Golden files in your repo** — judge verdicts are blessed to `.promptgold/golden/*.json` and committed. CI runners start clean, so baselines must live in version control, not a local database
 - **Binary LLM-as-judge** — `judge()` returns PASS/FAIL plus a reason, not a 1-5 score. Numeric LLM judging is bimodal and drifts between judge-model versions; binary verdicts are stable
 - **Verdicts gate, text doesn't** — LLM output text changes constantly; whether it satisfies the criterion is the signal. Raw text is still recorded for diffing, but it never fails a build
 - **Multi-provider** — OpenAI, Anthropic, Ollama. One `Model` class, swap with a string
 - **Zero cloud** — works offline with Ollama, no signups, no telemetry
 
-## What promptspec is NOT
+## What promptgold is NOT
 
-Opinionated rejection is a feature. promptspec deliberately has:
+Opinionated rejection is a feature. promptgold deliberately has:
 
 - ❌ No dashboard or web UI
 - ❌ No hosted tier, no accounts, no telemetry — **baselines live in your repo, not our cloud**
@@ -47,7 +47,7 @@ If you need a full eval platform, use [DeepEval](https://github.com/confident-ai
 ## Install
 
 ```bash
-pip install promptspec
+pip install promptgold
 export OPENAI_API_KEY=...   # or ANTHROPIC_API_KEY, or run Ollama locally
 ```
 
@@ -77,7 +77,7 @@ judge(response, "Is the answer correct?") # LLM-graded -> Verdict (truthy, has .
 ### 3. Golden files
 
 ```bash
-pytest --bless     # write judge verdicts to .promptspec/golden/*.json — commit them
+pytest --bless     # write judge verdicts to .promptgold/golden/*.json — commit them
 pytest             # fail if any verdict flips vs the golden file
 ```
 
@@ -97,12 +97,12 @@ Non-zero on any failure or verdict regression. CI just works — GitHub Actions,
 
 ## The judge model
 
-`judge()` grades with a model. Default: `PROMPTSPEC_JUDGE_MODEL` env var, else `openai:gpt-4o-mini`.
+`judge()` grades with a model. Default: `PROMPTGOLD_JUDGE_MODEL` env var, else `openai:gpt-4o-mini`.
 
-**Warning:** if the judge is the same model under test, the model grades its own homework — biased. Set `PROMPTSPEC_JUDGE_MODEL` to a different model for independence:
+**Warning:** if the judge is the same model under test, the model grades its own homework — biased. Set `PROMPTGOLD_JUDGE_MODEL` to a different model for independence:
 
 ```bash
-export PROMPTSPEC_JUDGE_MODEL="anthropic:claude-sonnet-4-5"
+export PROMPTGOLD_JUDGE_MODEL="anthropic:claude-sonnet-4-5"
 ```
 
 Or per-call: `judge(response, "...", model="anthropic:claude-sonnet-4-5")`.
@@ -112,7 +112,7 @@ Or per-call: `judge(response, "...", model="anthropic:claude-sonnet-4-5")`.
 - [x] v0.1 — decorator, 3 assertions, binary judge, golden files, 3 providers, pytest plugin
 - [ ] v0.2 — response caching (record/replay cassettes), cost tracking, JUnit XML
 - [ ] v0.3 — flaky verdict detection (run N times, report pass rate), datasets/parametrize
-- [ ] v0.4 — `promptspec init <prompt-file>` generates candidate test cases
+- [ ] v0.4 — `promptgold init <prompt-file>` generates candidate test cases
 
 ## Contributing
 

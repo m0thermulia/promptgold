@@ -12,13 +12,13 @@ import json
 from pathlib import Path
 from typing import Any
 
-GOLDEN_DIR = Path(".promptspec/golden")
+GOLDEN_DIR = Path(".promptgold/golden")
 
 
 def golden_path(nodeid: str) -> Path:
     """Map a pytest nodeid to its golden file path.
 
-    tests/test_prompts.py::test_empathy -> .promptspec/golden/test_prompts__test_empathy.json
+    tests/test_prompts.py::test_empathy -> .promptgold/golden/test_prompts__test_empathy.json
     """
     safe = nodeid.replace("/", "_").replace("::", "__").replace(".py", "")
     return GOLDEN_DIR / f"{safe}.json"

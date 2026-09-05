@@ -1,6 +1,6 @@
-"""Example promptspec tests. Run with: pytest examples/ --bless  (then plain pytest)"""
+"""Example promptgold tests. Run with: pytest examples/ --bless  (then plain pytest)"""
 
-from promptspec import contains, judge, matches, prompt_test
+from promptgold import contains, judge, matches, prompt_test
 
 
 @prompt_test(model="openai:gpt-4o-mini")

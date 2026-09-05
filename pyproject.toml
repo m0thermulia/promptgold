@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "promptspec"
+name = "promptgold"
 version = "0.1.0"
 description = "pytest for prompts — write a test, get a baseline, catch regressions in CI"
 readme = "README.md"
@@ -30,14 +30,14 @@ all = ["openai>=1.0", "anthropic>=0.40"]
 dev = ["pytest>=8.0", "ruff>=0.6", "openai>=1.0", "anthropic>=0.40"]
 
 [project.urls]
-Homepage = "https://github.com/rsubundamulia/promptspec"
-Repository = "https://github.com/rsubundamulia/promptspec"
+Homepage = "https://github.com/rsubundamulia/promptgold"
+Repository = "https://github.com/rsubundamulia/promptgold"
 
 [project.entry-points.pytest11]
-promptspec = "promptspec.plugin"
+promptgold = "promptgold.plugin"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/promptspec"]
+packages = ["src/promptgold"]
 
 [tool.ruff]
 target-version = "py310"

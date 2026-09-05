@@ -8,9 +8,9 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from promptspec.models import Model
+    from promptgold.models import Model
 
-# Lazily created judge model — see PROMPTSPEC_JUDGE_MODEL below.
+# Lazily created judge model — see PROMPTGOLD_JUDGE_MODEL below.
 _judge_model: Model | None = None
 
 JUDGE_PROMPT = """You are grading an LLM response against a criterion.
@@ -53,20 +53,20 @@ def matches(response: str, pattern: str) -> bool:
 def resolve_judge_model(model: Model | str | None) -> Model:
     """Pick the judge model.
 
-    Default: whatever PROMPTSPEC_JUDGE_MODEL says, else openai:gpt-4o-mini.
+    Default: whatever PROMPTGOLD_JUDGE_MODEL says, else openai:gpt-4o-mini.
     WARNING: if you judge with the same model under test, the model grades its
-    own homework — biased. Set PROMPTSPEC_JUDGE_MODEL to a different model for
+    own homework — biased. Set PROMPTGOLD_JUDGE_MODEL to a different model for
     independence.
     """
     global _judge_model
-    from promptspec.models import Model
+    from promptgold.models import Model
 
     if isinstance(model, Model):
         return model
     if isinstance(model, str):
         return Model(model)
     if _judge_model is None:
-        _judge_model = Model(os.environ.get("PROMPTSPEC_JUDGE_MODEL", "openai:gpt-4o-mini"))
+        _judge_model = Model(os.environ.get("PROMPTGOLD_JUDGE_MODEL", "openai:gpt-4o-mini"))
     return _judge_model
 
 
@@ -79,7 +79,7 @@ def judge(response: str, criterion: str, model: Model | str | None = None) -> Ve
     bimodal and drift between judge-model versions. Binary verdicts are stable.
     For gradation, run N times and look at the pass rate.
     """
-    from promptspec.core import get_active_context
+    from promptgold.core import get_active_context
 
     m = resolve_judge_model(model)
     raw = m.complete(system=JUDGE_PROMPT.format(criterion=criterion, response=response))

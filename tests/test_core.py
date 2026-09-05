@@ -1,4 +1,4 @@
-"""Unit tests for promptspec core — run offline with a stub provider."""
+"""Unit tests for promptgold core — run offline with a stub provider."""
 
 from __future__ import annotations
 
@@ -6,8 +6,8 @@ import re
 
 import pytest
 
-from promptspec import Model, contains, matches, prompt_test
-from promptspec.models import Model as ModelClass
+from promptgold import Model, contains, matches, prompt_test
+from promptgold.models import Model as ModelClass
 
 
 class StubModel(ModelClass):
@@ -64,12 +64,12 @@ def test_prompt_test_decorator_marks_function():
     def my_test(llm):
         pass
 
-    assert getattr(my_test, "_is_promptspec_test", False)
-    assert my_test._promptspec_model == "stub:stub"
+    assert getattr(my_test, "_is_promptgold_test", False)
+    assert my_test._promptgold_model == "stub:stub"
 
 
 def test_llm_context_records_calls():
-    from promptspec.core import LLMContext
+    from promptgold.core import LLMContext
 
     ctx = LLMContext(model=StubModel("canned"))
     out = ctx.complete(system="s", user="u")
@@ -80,7 +80,7 @@ def test_llm_context_records_calls():
 
 
 def test_judge_pass_verdict():
-    from promptspec.assertions import judge
+    from promptgold.assertions import judge
 
     v = judge("anything", "Is it good?", model=StubModel("VERDICT: PASS\nREASON: it's great"))
     assert v.passed is True
@@ -89,7 +89,7 @@ def test_judge_pass_verdict():
 
 
 def test_judge_fail_verdict():
-    from promptspec.assertions import judge
+    from promptgold.assertions import judge
 
     v = judge("anything", "Is it good?", model=StubModel("VERDICT: FAIL\nREASON: it's bad"))
     assert v.passed is False
@@ -97,15 +97,15 @@ def test_judge_fail_verdict():
 
 
 def test_judge_rejects_bad_output():
-    from promptspec.assertions import judge
+    from promptgold.assertions import judge
 
     with pytest.raises(ValueError, match="no verdict"):
         judge("anything", "Is it good?", model=StubModel("i dunno"))
 
 
 def test_judge_records_verdict_in_active_context():
-    from promptspec.assertions import judge
-    from promptspec.core import LLMContext, set_active_context
+    from promptgold.assertions import judge
+    from promptgold.core import LLMContext, set_active_context
 
     ctx = LLMContext(model=StubModel("x"))
     set_active_context(ctx)
@@ -119,7 +119,7 @@ def test_judge_records_verdict_in_active_context():
 
 
 def test_golden_files_roundtrip(tmp_path, monkeypatch):
-    import promptspec.golden as golden
+    import promptgold.golden as golden
 
     monkeypatch.setattr(golden, "GOLDEN_DIR", tmp_path / "golden")
     nodeid = "tests/test_x.py::test_thing"
