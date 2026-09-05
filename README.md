@@ -1,6 +1,6 @@
 # promptspec
 
-**pytest for prompts.** Write a test, get a baseline, catch regressions in CI.
+**pytest for prompts.** Write a test, bless the verdict, catch regressions in CI.
 
 ```python
 from promptspec import prompt_test, judge, contains
@@ -12,41 +12,33 @@ def test_support_stays_empathetic(llm):
         user="your product is garbage and I want my money back",
     )
     assert not contains(response, "calm down")
-    assert judge(response, "Is this response empathetic?") >= 4
+    assert judge(response, "Is this response empathetic?")
 ```
 
 ```bash
-$ pytest
-test_support_stays_empathetic PASSED (1.2s, $0.0003)
-
-$ pytest --baseline
-# first run records golden outputs
-
-$ pytest
-test_support_stays_empathetic REGRESSED
-  judge score: 4 → 2
-  baseline: "I completely understand your frustration..."
-  current:  "I apologize, but our policy states..."
+$ pytest --bless          # record the judge verdicts as golden files (commit them)
+$ pytest                  # later runs fail if a verdict flips PASS -> FAIL
 ```
 
-That's it. Five concepts. No YAML. No platform. No account.
+That's it. Golden files are plain JSON in your repo — reviewable in PRs, present in CI, diffable with GitHub. No database, no cloud, no account.
 
 ## Why promptspec
 
 You changed a system prompt. Did it break anything? Today the answer is "vibes" — you eyeball a few outputs and ship it. promptspec makes prompt changes testable like code changes:
 
 - **pytest-native** — prompt tests live next to your unit tests, run with `pytest`, fail in CI
-- **Baselines** — first run records outputs; later runs diff against them automatically
-- **LLM-as-judge** — score subjective quality ("empathetic?", "correct?") without writing rubrics
+- **Golden files in your repo** — judge verdicts are blessed to `.promptspec/golden/*.json` and committed. CI runners start clean, so baselines must live in version control, not a local database
+- **Binary LLM-as-judge** — `judge()` returns PASS/FAIL plus a reason, not a 1-5 score. Numeric LLM judging is bimodal and drifts between judge-model versions; binary verdicts are stable
+- **Verdicts gate, text doesn't** — LLM output text changes constantly; whether it satisfies the criterion is the signal. Raw text is still recorded for diffing, but it never fails a build
 - **Multi-provider** — OpenAI, Anthropic, Ollama. One `Model` class, swap with a string
-- **Zero cloud** — local SQLite history, works offline with Ollama, no signups
+- **Zero cloud** — works offline with Ollama, no signups, no telemetry
 
 ## What promptspec is NOT
 
 Opinionated rejection is a feature. promptspec deliberately has:
 
 - ❌ No dashboard or web UI
-- ❌ No hosted tier, no accounts, no telemetry
+- ❌ No hosted tier, no accounts, no telemetry — **baselines live in your repo, not our cloud**
 - ❌ No 50-metric zoo — three assertions cover 90% of cases
 - ❌ No YAML-first config — tests are Python code, versioned with your code
 
@@ -75,17 +67,21 @@ def test_refund_policy(llm): ...
 Three cover almost everything:
 
 ```python
-contains(response, "refund")              # substring / regex
-matches(response, r"order #\d+")          # regex
-judge(response, "Is the answer correct?") # LLM-graded 1-5, returns int
+contains(response, "refund")              # substring / regex -> bool
+matches(response, r"order #\d+")          # regex -> bool
+judge(response, "Is the answer correct?") # LLM-graded -> Verdict (truthy, has .reason)
 ```
 
-### 3. Baselines
+`judge()` returns a `Verdict`: `bool(verdict)` is the PASS/FAIL, `verdict.reason` explains why.
+
+### 3. Golden files
 
 ```bash
-pytest --baseline          # record current outputs as golden
-pytest                     # diff against golden, fail on regression
+pytest --bless     # write judge verdicts to .promptspec/golden/*.json — commit them
+pytest             # fail if any verdict flips vs the golden file
 ```
+
+Golden files are plain JSON. Review them in PRs like any snapshot. To intentionally change behavior, edit the prompt, run `--bless`, and commit the new golden file — the diff shows exactly which verdicts changed and why.
 
 ### 4. `Model`
 
@@ -97,14 +93,26 @@ Model("ollama:llama3.1")          # fully offline
 
 ### 5. Exit codes
 
-Non-zero on any failure or regression. CI just works — GitHub Actions, GitLab, whatever.
+Non-zero on any failure or verdict regression. CI just works — GitHub Actions, GitLab, whatever.
+
+## The judge model
+
+`judge()` grades with a model. Default: `PROMPTSPEC_JUDGE_MODEL` env var, else `openai:gpt-4o-mini`.
+
+**Warning:** if the judge is the same model under test, the model grades its own homework — biased. Set `PROMPTSPEC_JUDGE_MODEL` to a different model for independence:
+
+```bash
+export PROMPTSPEC_JUDGE_MODEL="anthropic:claude-sonnet-4-5"
+```
+
+Or per-call: `judge(response, "...", model="anthropic:claude-sonnet-4-5")`.
 
 ## Roadmap
 
-- [x] v0.1 — core: decorator, 3 assertions, baselines, 3 providers, pytest plugin
-- [ ] v0.2 — snapshot diff viewer, cost tracking, JUnit XML
-- [ ] v0.3 — flaky test detection (run N times, report variance)
-- [ ] v0.4 — adversarial test pack (jailbreak / injection / PII)
+- [x] v0.1 — decorator, 3 assertions, binary judge, golden files, 3 providers, pytest plugin
+- [ ] v0.2 — response caching (record/replay cassettes), cost tracking, JUnit XML
+- [ ] v0.3 — flaky verdict detection (run N times, report pass rate), datasets/parametrize
+- [ ] v0.4 — `promptspec init <prompt-file>` generates candidate test cases
 
 ## Contributing
 

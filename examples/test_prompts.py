@@ -1,4 +1,4 @@
-"""Example promptspec tests. Run with: pytest examples/ --baseline  (then plain pytest)"""
+"""Example promptspec tests. Run with: pytest examples/ --bless  (then plain pytest)"""
 
 from promptspec import contains, judge, matches, prompt_test
 
@@ -10,7 +10,7 @@ def test_support_stays_empathetic(llm):
         user="your product is garbage and I want my money back",
     )
     assert not contains(response, "calm down")
-    assert judge(response, "Is this response empathetic to a frustrated customer?") >= 4
+    assert judge(response, "Is this response empathetic to a frustrated customer?")
 
 
 @prompt_test(model="openai:gpt-4o-mini")

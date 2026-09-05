@@ -6,4 +6,4 @@ build/
 .venv/
 .pytest_cache/
 .ruff_cache/
-.promptspec/
+# NOTE: .promptspec/golden/ SHOULD be committed (golden files live in your repo)
