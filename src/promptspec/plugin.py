@@ -1,65 +1,56 @@
-"""pytest plugin: discovers @prompt_test functions, handles baselines."""
+"""pytest plugin: discovers @prompt_test functions, handles golden files."""
 
 from __future__ import annotations
 
+import inspect
 from typing import Any
 
 import pytest
 
-from promptspec.baselines import BaselineStore, test_id_for
-from promptspec.core import LLMContext
+from promptspec import golden
+from promptspec.core import LLMContext, set_active_context
 from promptspec.models import Model
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
     group = parser.getgroup("promptspec")
     group.addoption(
-        "--baseline",
+        "--bless",
         action="store_true",
         default=False,
-        help="Record current prompt outputs as the golden baseline.",
+        help="Record current judge verdicts as the golden files (commit them).",
     )
     group.addoption(
-        "--no-baseline-check",
+        "--no-golden-check",
         action="store_true",
         default=False,
-        help="Run prompt tests without comparing against baselines.",
+        help="Run prompt tests without comparing against golden files.",
     )
 
 
-@pytest.fixture(scope="session")
-def promptspec_store() -> BaselineStore:
-    store = BaselineStore()
-    yield store
-    store.close()
-
-
-class BaselineMismatch(AssertionError):
+class GoldenMismatch(AssertionError):
     pass
 
 
 @pytest.hookimpl(tryfirst=True)
 def pytest_runtest_call(item: pytest.Item) -> None:
-    """Wrap promptspec tests with baseline recording/comparison.
+    """Run a prompt test, then bless or check judge verdicts.
 
-    The decorated function's extra parameters (beyond `llm`) are resolved from
-    pytest fixtures, so prompt tests can use tmp_path, monkeypatch, etc.
+    What gates the build: judge verdicts (PASS/FAIL) from the golden files.
+    What doesn't: the raw response text. Text changes constantly with LLMs;
+    whether the response satisfies the criterion is the signal a human can
+    act on. Raw text is still recorded in the golden file for diffing.
     """
     fn = getattr(item, "obj", None)
     if fn is None or not getattr(fn, "_is_promptspec_test", False):
         return
-
-    store = item._promptspec_store  # injected in pytest_runtest_setup
-    tid = test_id_for(item.nodeid, str(fn._promptspec_model))
 
     model_spec = fn._promptspec_model
     model = model_spec if isinstance(model_spec, Model) else Model(model_spec)
     ctx = LLMContext(model=model)
 
     original = fn.__wrapped__
-    import inspect as _inspect
-
-    sig = _inspect.signature(original)
+    sig = inspect.signature(original)
     kwargs = {}
     for name in sig.parameters:
         if name == "llm":
@@ -71,56 +62,57 @@ def pytest_runtest_call(item: pytest.Item) -> None:
                 f"promptspec test {item.nodeid}: parameter {name!r} is neither "
                 "'llm' nor an available fixture"
             )
-    original(**kwargs)
+
+    set_active_context(ctx)
+    try:
+        original(**kwargs)
+    finally:
+        set_active_context(None)
 
     payload: dict[str, Any] = {
         "model": model.spec,
+        "verdicts": ctx.verdicts,
         "responses": [c["response"] for c in ctx.calls],
-        "latency_ms": sum(c["latency_ms"] for c in ctx.calls),
     }
-    store.record_run(tid, payload)
 
-    if item.config.getoption("--baseline"):
-        store.set(tid, payload)
+    if item.config.getoption("--bless"):
+        path = golden.save(item.nodeid, payload)
+        print(f"\npromptspec: blessed {path}")
         return
 
-    if item.config.getoption("--no-baseline-check"):
+    if item.config.getoption("--no-golden-check"):
         return
 
-    baseline = store.get(tid)
-    if baseline is None:
-        # No baseline yet: pass silently, record nothing (explicit --baseline to bless)
+    expected = golden.load(item.nodeid)
+    if expected is None:
+        # No golden file yet: pass, but tell the user how to create one.
+        print(
+            f"\npromptspec: no golden file for {item.nodeid}. "
+            "Run `pytest --bless` and commit the result."
+        )
         return
 
-    if baseline["responses"] != payload["responses"]:
-        diff = _format_diff(baseline, payload)
-        raise BaselineMismatch(f"Prompt output regressed vs baseline:\n{diff}")
+    mismatches = _diff_verdicts(expected["verdicts"], payload["verdicts"])
+    if mismatches:
+        raise GoldenMismatch(
+            "Judge verdicts regressed vs golden file:\n" + "\n".join(mismatches)
+        )
 
 
-def pytest_runtest_setup(item: pytest.Item) -> None:
-    if getattr(getattr(item, "obj", None), "_is_promptspec_test", False):
-        # Session-scoped store via fixture cache hack: create per-session once
-        if not hasattr(item.session, "_promptspec_store"):
-            item.session._promptspec_store = BaselineStore()  # type: ignore[attr-defined]
-        item._promptspec_store = item.session._promptspec_store  # type: ignore[attr-defined]
-
-
-def pytest_sessionfinish(session: pytest.Session) -> None:
-    store = getattr(session, "_promptspec_store", None)
-    if store is not None:
-        store.close()
-
-
-def _format_diff(baseline: dict[str, Any], current: dict[str, Any]) -> str:
+def _diff_verdicts(expected: list[dict], current: list[dict]) -> list[str]:
     lines = []
-    for i, (old, new) in enumerate(
-        zip(baseline["responses"], current["responses"], strict=False)
-    ):
-        if old != new:
-            lines.append(f"  call {i}:")
-            lines.append(f"    baseline: {old[:200]!r}")
-            lines.append(f"    current:  {new[:200]!r}")
-    return "\n".join(lines) or "  (responses differ in length)"
+    for i, (e, c) in enumerate(zip(expected, current, strict=False)):
+        if e["passed"] != c["passed"]:
+            lines.append(
+                f"  verdict {i} ({e['criterion']!r}): "
+                f"{'PASS' if e['passed'] else 'FAIL'} -> "
+                f"{'PASS' if c['passed'] else 'FAIL'}"
+            )
+            if c.get("reason"):
+                lines.append(f"    reason now: {c['reason']}")
+    if len(expected) != len(current):
+        lines.append(f"  verdict count changed: {len(expected)} -> {len(current)}")
+    return lines
 
 
 def pytest_configure(config: pytest.Config) -> None:

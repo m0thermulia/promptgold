@@ -11,6 +11,19 @@ from typing import Any
 
 from promptspec.models import Model
 
+# The context of the currently-running prompt test, if any. judge() records
+# verdicts here so the plugin can compare them against golden files.
+_active_context: LLMContext | None = None
+
+
+def set_active_context(ctx: LLMContext | None) -> None:
+    global _active_context
+    _active_context = ctx
+
+
+def get_active_context() -> LLMContext | None:
+    return _active_context
+
 
 @dataclass
 class LLMContext:
@@ -18,6 +31,7 @@ class LLMContext:
 
     model: Model
     calls: list[dict[str, Any]] = field(default_factory=list)
+    verdicts: list[dict[str, Any]] = field(default_factory=list)
 
     def complete(self, system: str = "", user: str = "", **kwargs: Any) -> str:
         start = time.monotonic()

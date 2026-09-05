@@ -79,26 +79,51 @@ def test_llm_context_records_calls():
     assert ctx.last_response == "canned"
 
 
-def test_judge_with_stub_model():
+def test_judge_pass_verdict():
     from promptspec.assertions import judge
 
-    score = judge("anything", "Is it good?", model=StubModel("4"))
-    assert score == 4
+    v = judge("anything", "Is it good?", model=StubModel("VERDICT: PASS\nREASON: it's great"))
+    assert v.passed is True
+    assert bool(v) is True
+    assert v.reason == "it's great"
+
+
+def test_judge_fail_verdict():
+    from promptspec.assertions import judge
+
+    v = judge("anything", "Is it good?", model=StubModel("VERDICT: FAIL\nREASON: it's bad"))
+    assert v.passed is False
+    assert bool(v) is False
 
 
 def test_judge_rejects_bad_output():
     from promptspec.assertions import judge
 
-    with pytest.raises(ValueError, match="non-score"):
-        judge("anything", "Is it good?", model=StubModel("no digits here"))
+    with pytest.raises(ValueError, match="no verdict"):
+        judge("anything", "Is it good?", model=StubModel("i dunno"))
 
 
-def test_baseline_store_roundtrip(tmp_path):
-    from promptspec.baselines import BaselineStore
+def test_judge_records_verdict_in_active_context():
+    from promptspec.assertions import judge
+    from promptspec.core import LLMContext, set_active_context
 
-    store = BaselineStore(tmp_path / "h.db")
-    assert store.get("t1") is None
-    store.set("t1", {"responses": ["a"]})
-    assert store.get("t1") == {"responses": ["a"]}
-    store.record_run("t1", {"responses": ["b"]})
-    store.close()
+    ctx = LLMContext(model=StubModel("x"))
+    set_active_context(ctx)
+    try:
+        judge("resp", "Is it polite?", model=StubModel("VERDICT: PASS\nREASON: yes"))
+    finally:
+        set_active_context(None)
+    assert len(ctx.verdicts) == 1
+    assert ctx.verdicts[0]["criterion"] == "Is it polite?"
+    assert ctx.verdicts[0]["passed"] is True
+
+
+def test_golden_files_roundtrip(tmp_path, monkeypatch):
+    import promptspec.golden as golden
+
+    monkeypatch.setattr(golden, "GOLDEN_DIR", tmp_path / "golden")
+    nodeid = "tests/test_x.py::test_thing"
+    assert golden.load(nodeid) is None
+    payload = {"model": "m", "verdicts": [{"criterion": "c", "passed": True}], "responses": ["r"]}
+    golden.save(nodeid, payload)
+    assert golden.load(nodeid) == payload

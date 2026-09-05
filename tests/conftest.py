@@ -9,9 +9,11 @@ import promptspec.models
 
 @pytest.fixture
 def stub_model(monkeypatch):
-    """Replace Model's network calls with a canned response.
+    """Replace Model's network calls with canned responses.
 
-    Yields a callable to change the canned response mid-test.
+    Detects judge calls (system prompt asks for VERDICT) and returns a passing
+    verdict; otherwise returns the canned response. Yields a callable to change
+    the canned response mid-test.
     """
     state = {"response": "I understand your frustration, happy to help with a refund."}
 
@@ -21,6 +23,8 @@ def stub_model(monkeypatch):
         self.temperature, self.max_tokens, self.extra = 0.0, 100, kw
 
     def fake_complete(self, system="", user="", **kw):
+        if "VERDICT" in system:
+            return "VERDICT: PASS\nREASON: stub judge approves"
         return state["response"]
 
     monkeypatch.setattr(promptspec.models.Model, "__init__", fake_init)
