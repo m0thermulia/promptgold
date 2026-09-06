@@ -107,10 +107,19 @@ export PROMPTGOLD_JUDGE_MODEL="anthropic:claude-sonnet-4-5"
 
 Or per-call: `judge(response, "...", model="anthropic:claude-sonnet-4-5")`.
 
+## Response cassettes (record once, replay free)
+
+Every prompt test runs through a VCR-style cassette in `.promptgold/cassettes/`.
+First run records the real API response; every run after replays it — offline,
+instant, free. Commit cassettes alongside golden files and CI costs $0.
+
+- Prompt changed? Delete that test's cassette and rerun to re-record.
+- `pytest --no-cassette` forces live API calls.
+
 ## Roadmap
 
 - [x] v0.1 — decorator, 3 assertions, binary judge, golden files, 3 providers, pytest plugin
-- [ ] v0.2 — response caching (record/replay cassettes), cost tracking, JUnit XML
+- [ ] v0.2 — ~~response caching (record/replay cassettes)~~ ✅, cost tracking, JUnit XML
 - [ ] v0.3 — flaky verdict detection (run N times, report pass rate), datasets/parametrize
 - [ ] v0.4 — `promptgold init <prompt-file>` generates candidate test cases
 

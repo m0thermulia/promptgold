@@ -29,7 +29,7 @@ def get_active_context() -> LLMContext | None:
 class LLMContext:
     """Passed to every @prompt_test function. Wraps a Model with run metadata."""
 
-    model: Model
+    model: Any
     calls: list[dict[str, Any]] = field(default_factory=list)
     verdicts: list[dict[str, Any]] = field(default_factory=list)
 

@@ -7,7 +7,7 @@ from typing import Any
 
 import pytest
 
-from promptgold import golden
+from promptgold import cassettes, golden
 from promptgold.core import LLMContext, set_active_context
 from promptgold.models import Model
 
@@ -25,6 +25,12 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         action="store_true",
         default=False,
         help="Run prompt tests without comparing against golden files.",
+    )
+    group.addoption(
+        "--no-cassette",
+        action="store_true",
+        default=False,
+        help="Always call the live API instead of replaying response cassettes.",
     )
 
 
@@ -47,6 +53,8 @@ def pytest_runtest_call(item: pytest.Item) -> None:
 
     model_spec = fn._promptgold_model
     model = model_spec if isinstance(model_spec, Model) else Model(model_spec)
+    if not item.config.getoption("--no-cassette"):
+        model = cassettes.CassetteModel(model, item.nodeid)
     ctx = LLMContext(model=model)
 
     original = fn.__wrapped__
@@ -68,6 +76,9 @@ def pytest_runtest_call(item: pytest.Item) -> None:
         original(**kwargs)
     finally:
         set_active_context(None)
+        if isinstance(model, cassettes.CassetteModel):
+            if path := model.save():
+                print(f"\npromptgold: recorded {model.recorded} call(s) -> {path}")
 
     payload: dict[str, Any] = {
         "model": model.spec,
