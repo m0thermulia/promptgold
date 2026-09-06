@@ -8,6 +8,8 @@ from typing import Any
 
 import httpx
 
+from promptgold.pricing import estimate_tokens
+
 
 class Model:
     """Unified chat-completion interface.
@@ -26,6 +28,8 @@ class Model:
         self.max_tokens = max_tokens
         self.extra = kw
         self.spec = spec
+        # Filled by the most recent complete() call: {"input": int, "output": int}
+        self.last_usage: dict[str, int] | None = None
 
     def complete(self, system: str = "", user: str = "", **kwargs: Any) -> str:
         handler = getattr(self, f"_{self.provider}", None)
@@ -52,6 +56,13 @@ class Model:
             max_tokens=kw.pop("max_tokens", self.max_tokens),
             **kw,
         )
+        if resp.usage is not None:
+            self.last_usage = {
+                "input": resp.usage.prompt_tokens,
+                "output": resp.usage.completion_tokens,
+            }
+        else:
+            self.last_usage = None
         return resp.choices[0].message.content or ""
 
     def _anthropic(self, system: str, user: str, **kw: Any) -> str:
@@ -66,6 +77,10 @@ class Model:
             max_tokens=kw.pop("max_tokens", self.max_tokens),
             **kw,
         )
+        self.last_usage = {
+            "input": resp.usage.input_tokens,
+            "output": resp.usage.output_tokens,
+        }
         return "".join(b.text for b in resp.content if b.type == "text")
 
     def _ollama(self, system: str, user: str, **kw: Any) -> str:
@@ -79,4 +94,9 @@ class Model:
         r = httpx.post(f"{base}/api/generate", json=payload, timeout=120)
         r.raise_for_status()
         data = r.json()
-        return data.get("response", json.dumps(data))
+        text = data.get("response", json.dumps(data))
+        self.last_usage = {
+            "input": data.get("prompt_eval_count", estimate_tokens(system + user)),
+            "output": data.get("eval_count", estimate_tokens(text)),
+        }
+        return text

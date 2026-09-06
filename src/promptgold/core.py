@@ -9,6 +9,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
+from promptgold import pricing
 from promptgold.models import Model
 
 # The context of the currently-running prompt test, if any. judge() records
@@ -36,19 +37,28 @@ class LLMContext:
     def complete(self, system: str = "", user: str = "", **kwargs: Any) -> str:
         start = time.monotonic()
         text = self.model.complete(system=system, user=user, **kwargs)
-        self.calls.append(
-            {
-                "system": system,
-                "user": user,
-                "response": text,
-                "latency_ms": (time.monotonic() - start) * 1000,
-            }
-        )
+        call: dict[str, Any] = {
+            "system": system,
+            "user": user,
+            "response": text,
+            "latency_ms": (time.monotonic() - start) * 1000,
+        }
+        usage = getattr(self.model, "last_usage", None)
+        if usage is not None:
+            call["usage"] = usage
+            call["cost_usd"] = pricing.cost(self.model.spec, usage["input"], usage["output"])
+        self.calls.append(call)
         return text
 
     @property
     def last_response(self) -> str:
         return self.calls[-1]["response"] if self.calls else ""
+
+    @property
+    def total_cost(self) -> float | None:
+        """Total dollar cost of all calls this test made (None if unknown/free)."""
+        costs = [c["cost_usd"] for c in self.calls if c.get("cost_usd") is not None]
+        return sum(costs) if costs else None
 
 
 def prompt_test(model: str | Model, **model_kwargs: Any) -> Callable:

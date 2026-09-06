@@ -42,6 +42,11 @@ class CassetteModel:
         self.recorded = 0  # calls that hit the real API
         self.replayed = 0  # calls served from the cassette
 
+    @property
+    def last_usage(self) -> dict[str, int] | None:
+        """Token usage of the inner model's last real call (None on replay)."""
+        return getattr(self._inner, "last_usage", None)
+
     def complete(self, system: str = "", user: str = "", **kwargs: Any) -> str:
         key = _key(self.spec, system, user)
         responses = self._data["responses"]

@@ -119,7 +119,9 @@ instant, free. Commit cassettes alongside golden files and CI costs $0.
 ## Roadmap
 
 - [x] v0.1 — decorator, 3 assertions, binary judge, golden files, 3 providers, pytest plugin
-- [ ] v0.2 — ~~response caching (record/replay cassettes)~~ ✅, cost tracking, JUnit XML
+- [ ] v0.2 — ~~response caching (record/replay cassettes)~~ ✅, ~~cost tracking~~ ✅, JUnit XML
+  - cassettes: first run records API responses to `.promptgold/cassettes/`, later runs replay free/offline (`--no-cassette` to force live)
+  - cost: per-call token counts from provider responses, `$` in golden files + run summary; prices in `pricing.py`, override via `PROMPTGOLD_PRICE_OVERRIDES`
 - [ ] v0.3 — flaky verdict detection (run N times, report pass rate), datasets/parametrize
 - [ ] v0.4 — `promptgold init <prompt-file>` generates candidate test cases
 

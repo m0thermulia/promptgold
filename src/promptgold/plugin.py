@@ -38,6 +38,10 @@ class GoldenMismatch(AssertionError):
     pass
 
 
+# Total cost across every prompt test in the session, for the summary line.
+_session_costs: list[float] = []
+
+
 @pytest.hookimpl(tryfirst=True)
 def pytest_runtest_call(item: pytest.Item) -> None:
     """Run a prompt test, then bless or check judge verdicts.
@@ -84,7 +88,10 @@ def pytest_runtest_call(item: pytest.Item) -> None:
         "model": model.spec,
         "verdicts": ctx.verdicts,
         "responses": [c["response"] for c in ctx.calls],
+        "cost_usd": ctx.total_cost,
     }
+    if ctx.total_cost is not None:
+        _session_costs.append(ctx.total_cost)
 
     if item.config.getoption("--bless"):
         path = golden.save(item.nodeid, payload)
@@ -124,6 +131,13 @@ def _diff_verdicts(expected: list[dict], current: list[dict]) -> list[str]:
     if len(expected) != len(current):
         lines.append(f"  verdict count changed: {len(expected)} -> {len(current)}")
     return lines
+
+
+def pytest_terminal_summary(terminalreporter: Any) -> None:
+    if _session_costs:
+        terminalreporter.write_line(
+            f"promptgold: total cost this run: ${sum(_session_costs):.4f}"
+        )
 
 
 def pytest_configure(config: pytest.Config) -> None:

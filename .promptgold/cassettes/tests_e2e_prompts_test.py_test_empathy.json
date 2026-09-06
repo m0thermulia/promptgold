@@ -1,6 +1,6 @@
 {
-  "model": "fake:model",
+  "model": "openai:gpt-4o-mini",
   "responses": {
-    "9bc0c82c12ef56642daafe218abf6b12671f9c9587f84a316f31f5dfd3a473a5": "I understand your frustration, happy to help with a refund."
+    "ff1bfb92172e525b09b7398fd084f06befcef3782b4d841c2f90160f9ed76516": "I understand your frustration, happy to help with a refund."
   }
 }

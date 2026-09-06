@@ -21,10 +21,13 @@ def stub_model(monkeypatch):
         self.provider, self.name = spec.split(":", 1)
         self.spec = spec
         self.temperature, self.max_tokens, self.extra = 0.0, 100, kw
+        self.last_usage = {"input": 120, "output": 60}
 
     def fake_complete(self, system="", user="", **kw):
         if "VERDICT" in system:
+            self.last_usage = {"input": 300, "output": 10}
             return "VERDICT: PASS\nREASON: stub judge approves"
+        self.last_usage = {"input": 120, "output": 60}
         return state["response"]
 
     monkeypatch.setattr(promptgold.models.Model, "__init__", fake_init)

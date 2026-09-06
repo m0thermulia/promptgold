@@ -1,0 +1,14 @@
+{
+  "model": "openai:gpt-4o-mini",
+  "verdicts": [
+    {
+      "criterion": "Is this empathetic?",
+      "passed": true,
+      "reason": "stub judge approves"
+    }
+  ],
+  "responses": [
+    "I understand your frustration, happy to help with a refund."
+  ],
+  "cost_usd": 5.4e-05
+}
