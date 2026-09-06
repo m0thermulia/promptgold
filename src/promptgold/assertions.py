@@ -61,10 +61,11 @@ def resolve_judge_model(model: Model | str | None) -> Model:
     global _judge_model
     from promptgold.models import Model
 
-    if isinstance(model, Model):
-        return model
     if isinstance(model, str):
         return Model(model)
+    if model is not None:
+        # Any model-like object with .complete (Model, CassetteModel, stubs)
+        return model
     if _judge_model is None:
         _judge_model = Model(os.environ.get("PROMPTGOLD_JUDGE_MODEL", "openai:gpt-4o-mini"))
     return _judge_model

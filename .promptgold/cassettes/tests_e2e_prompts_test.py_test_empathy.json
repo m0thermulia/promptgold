@@ -1,6 +1,7 @@
 {
   "model": "openai:gpt-4o-mini",
   "responses": {
-    "ff1bfb92172e525b09b7398fd084f06befcef3782b4d841c2f90160f9ed76516": "I understand your frustration, happy to help with a refund."
+    "ff1bfb92172e525b09b7398fd084f06befcef3782b4d841c2f90160f9ed76516": "I understand your frustration, happy to help with a refund.",
+    "0a1cf7c17c1381001a698bd83681d5814fcf4572585a86d106198794390973ab": "VERDICT: PASS\nREASON: stub judge approves"
   }
 }
