@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import inspect
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -32,6 +33,12 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         action="store_true",
         default=False,
         help="Always call the live API instead of replaying response cassettes.",
+    )
+    group.addoption(
+        "--promptgold-report",
+        metavar="PATH",
+        default=None,
+        help="Write a self-contained HTML report to PATH after the run.",
     )
 
 
@@ -181,11 +188,19 @@ def _diff_verdicts(expected: list[dict], current: list[dict]) -> list[str]:
     return lines
 
 
-def pytest_terminal_summary(terminalreporter: Any) -> None:
+def pytest_terminal_summary(terminalreporter: Any, config: pytest.Config) -> None:
     if _run.tests:
         terminalreporter.write_line("")
         for line in terminal.render(_run).splitlines():
             terminalreporter.write_line(line)
+
+    report_path = config.getoption("--promptgold-report")
+    if report_path and _run.tests:
+        from promptgold import report
+
+        out = Path(report_path)
+        out.write_text(report.render(_run))
+        terminalreporter.write_line(f"promptgold: HTML report -> {out}")
 
 
 def pytest_configure(config: pytest.Config) -> None:
