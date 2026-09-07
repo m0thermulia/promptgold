@@ -7,6 +7,8 @@ that contract so a future refactor can't silently break CI reporting.
 
 from __future__ import annotations
 
+import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -39,11 +41,21 @@ def test_empathy(llm):
 
 
 def _run_pytest(cwd: Path, *args: str) -> subprocess.CompletedProcess:
+    # Scrub parent-pytest env vars: an inherited PYTEST_CURRENT_TEST leaks into
+    # the nested run and can change plugin behavior. PYTHONDONTWRITEBYTECODE
+    # avoids stale .pyc reuse when a test rewrites a file with same size/mtime
+    # (e.g. swapping "PASS" for "FAIL" between runs).
+    env = {k: v for k, v in os.environ.items() if not k.startswith("PYTEST_")}
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
+    # Remove any cached bytecode from prior runs of this project dir.
+    for pycache in cwd.rglob("__pycache__"):
+        shutil.rmtree(pycache, ignore_errors=True)
     return subprocess.run(
         [sys.executable, "-m", "pytest", *args],
         cwd=cwd,
         capture_output=True,
         text=True,
+        env=env,
     )
 
 
@@ -77,7 +89,9 @@ def test_junitxml_captures_golden_mismatch(tmp_path):
         proj, "test_prompts.py", f"--junitxml={xml}", "--no-cassette", "-q"
     )
 
-    assert result.returncode != 0
+    assert result.returncode != 0, (
+        f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
+    )
     content = xml.read_text()
     assert "GoldenMismatch" in content
     assert "<failure" in content
