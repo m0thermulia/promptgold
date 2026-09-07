@@ -7,9 +7,10 @@ from typing import Any
 
 import pytest
 
-from promptgold import cassettes, golden
+from promptgold import cassettes, golden, terminal
 from promptgold.core import LLMContext, set_active_context
 from promptgold.models import Model
+from promptgold.results import PromptTestResult, RunResults, VerdictResult
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -38,8 +39,8 @@ class GoldenMismatch(AssertionError):
     pass
 
 
-# Total cost across every prompt test in the session, for the summary line.
-_session_costs: list[float] = []
+# Collected results for the terminal summary (and future HTML report).
+_run = RunResults()
 
 
 @pytest.hookimpl(tryfirst=True)
@@ -75,9 +76,13 @@ def pytest_runtest_call(item: pytest.Item) -> None:
                 "'llm' nor an available fixture"
             )
 
+    test_error: str | None = None
     set_active_context(ctx)
     try:
         original(**kwargs)
+    except Exception as e:
+        test_error = f"{type(e).__name__}: {e}"
+        raise
     finally:
         set_active_context(None)
         if isinstance(model, cassettes.CassetteModel):
@@ -90,8 +95,22 @@ def pytest_runtest_call(item: pytest.Item) -> None:
         "responses": [c["response"] for c in ctx.calls],
         "cost_usd": ctx.total_cost,
     }
-    if ctx.total_cost is not None:
-        _session_costs.append(ctx.total_cost)
+
+    result = PromptTestResult(
+        nodeid=item.nodeid,
+        model=model.spec,
+        cost_usd=ctx.total_cost,
+        latency_ms=sum(c["latency_ms"] for c in ctx.calls),
+        cassette=(
+            "recorded"
+            if isinstance(model, cassettes.CassetteModel) and model.recorded
+            else "replayed"
+            if isinstance(model, cassettes.CassetteModel)
+            else "live"
+        ),
+        error=test_error,
+    )
+    _run.tests.append(result)
 
     if item.config.getoption("--bless"):
         path = golden.save(item.nodeid, payload)
@@ -99,6 +118,7 @@ def pytest_runtest_call(item: pytest.Item) -> None:
         return
 
     if item.config.getoption("--no-golden-check"):
+        result.verdicts.extend(_verdict_results(ctx, None))
         return
 
     expected = golden.load(item.nodeid)
@@ -108,13 +128,41 @@ def pytest_runtest_call(item: pytest.Item) -> None:
             f"\npromptgold: no golden file for {item.nodeid}. "
             "Run `pytest --bless` and commit the result."
         )
+        result.verdicts.extend(_verdict_results(ctx, None))
         return
+
+    result.verdicts.extend(_verdict_results(ctx, expected["verdicts"]))
 
     mismatches = _diff_verdicts(expected["verdicts"], payload["verdicts"])
     if mismatches:
         raise GoldenMismatch(
             "Judge verdicts regressed vs golden file:\n" + "\n".join(mismatches)
         )
+
+
+def _verdict_results(ctx: LLMContext, expected: list[dict] | None) -> list[VerdictResult]:
+    out = []
+    if expected is None:
+        for v in ctx.verdicts:
+            out.append(
+                VerdictResult(
+                    criterion=v["criterion"],
+                    expected=None,
+                    actual=v["passed"],
+                    reason=v.get("reason", ""),
+                )
+            )
+    else:
+        for e, c in zip(expected, ctx.verdicts, strict=False):
+            out.append(
+                VerdictResult(
+                    criterion=c["criterion"],
+                    expected=e["passed"],
+                    actual=c["passed"],
+                    reason=c.get("reason", ""),
+                )
+            )
+    return out
 
 
 def _diff_verdicts(expected: list[dict], current: list[dict]) -> list[str]:
@@ -134,10 +182,10 @@ def _diff_verdicts(expected: list[dict], current: list[dict]) -> list[str]:
 
 
 def pytest_terminal_summary(terminalreporter: Any) -> None:
-    if _session_costs:
-        terminalreporter.write_line(
-            f"promptgold: total cost this run: ${sum(_session_costs):.4f}"
-        )
+    if _run.tests:
+        terminalreporter.write_line("")
+        for line in terminal.render(_run).splitlines():
+            terminalreporter.write_line(line)
 
 
 def pytest_configure(config: pytest.Config) -> None:
