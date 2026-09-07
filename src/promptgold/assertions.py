@@ -79,10 +79,18 @@ def judge(response: str, criterion: str, model: Model | str | None = None) -> Ve
     Binary (PASS/FAIL) rather than a 1-5 score: LLM judges on numeric scales are
     bimodal and drift between judge-model versions. Binary verdicts are stable.
     For gradation, run N times and look at the pass rate.
+
+    Model resolution order: explicit `model=` arg > PROMPTGOLD_JUDGE_MODEL env >
+    the active prompt test's model (so cassette replay covers judge calls too).
+    Set PROMPTGOLD_JUDGE_MODEL to a different provider for judge independence.
     """
     from promptgold.core import get_active_context
 
-    m = resolve_judge_model(model)
+    ctx = get_active_context()
+    if model is None and "PROMPTGOLD_JUDGE_MODEL" not in os.environ and ctx is not None:
+        m = ctx.model
+    else:
+        m = resolve_judge_model(model)
     raw = m.complete(system=JUDGE_PROMPT.format(criterion=criterion, response=response))
 
     verdict_match = re.search(r"VERDICT:\s*(PASS|FAIL)", raw, re.IGNORECASE)

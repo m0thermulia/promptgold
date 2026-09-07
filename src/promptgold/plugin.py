@@ -52,17 +52,30 @@ _run = RunResults()
 
 @pytest.hookimpl(tryfirst=True)
 def pytest_runtest_call(item: pytest.Item) -> None:
-    """Run a prompt test, then bless or check judge verdicts.
+    """Run promptgold tests via our runner; let everything else through.
 
-    What gates the build: judge verdicts (PASS/FAIL) from the golden files.
-    What doesn't: the raw response text. Text changes constantly with LLMs;
-    whether the response satisfies the criterion is the signal a human can
-    act on. Raw text is still recorded in the golden file for diffing.
+    This hookimpl is NOT a wrapper: for promptgold tests we run the function
+    ourselves and then mark the item so pytest's default runtest_call skips
+    re-executing the body (which would double API spend and double verdicts).
     """
     fn = getattr(item, "obj", None)
     if fn is None or not getattr(fn, "_is_promptgold_test", False):
         return
+    _run_prompt_test(item, fn)
+    # Prevent pytest's default runtest_call from running the body a second
+    # time: point item.obj at a no-op with an empty signature.
+    item.obj = _already_ran
 
+
+def _already_ran(**kwargs: Any) -> None:
+    """Placeholder swapped in after a promptgold test has been executed.
+
+    Accepts and ignores the fixture kwargs pytest's default runtest_call
+    passes to item.obj()."""
+
+
+def _run_prompt_test(item: pytest.Item, fn: Any) -> None:
+    """Execute one @prompt_test function: cassettes, verdicts, golden gate."""
     model_spec = fn._promptgold_model
     model = model_spec if isinstance(model_spec, Model) else Model(model_spec)
     if not item.config.getoption("--no-cassette"):

@@ -1,0 +1,11 @@
+{
+  "model": "openai:gpt-4o-mini",
+  "responses": {
+    "6c92b5eb576d964742fa407f5571bb6dbe4c0e8e1d659c2b1d03e7cef2cbe6dc": "I'm here to help with your LuxMart orders, refunds, shipping, and product questions. Is there something about your order I can help you with?",
+    "62ba0be9b1e9b8dd2ca8e7c611c79643def4fe7377ccef4ce26947c8d860d913": "VERDICT: PASS\nREASON: the reply satisfies the criterion.",
+    "6797428b07a1b80751bcedd21c56e0fcffb2493fe94883ff8a2d3da7ddbe8846": "I'm here to help with your LuxMart orders, refunds, shipping, and product questions. Is there something about your order I can help you with?",
+    "e2619196ed73844f36ee5c2508c9776d8f80a45c8009a541a0c8265985d2d5f7": "I'm here to help with your LuxMart orders, refunds, shipping, and product questions. Is there something about your order I can help you with?",
+    "4fe3f302f1955d8be963d9f98926ebdd029db4733db3ca1840337767271d21f2": "I'm here to help with your LuxMart orders, refunds, shipping, and product questions. Is there something about your order I can help you with?",
+    "664882d41c13db43bcb726ccfe5346da46fa80369683239c8e8e5269a52edc40": "I'm here to help with your LuxMart orders, refunds, shipping, and product questions. Is there something about your order I can help you with?"
+  }
+}

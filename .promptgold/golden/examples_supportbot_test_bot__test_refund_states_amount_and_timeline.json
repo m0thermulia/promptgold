@@ -1,0 +1,14 @@
+{
+  "model": "openai:gpt-4o-mini",
+  "verdicts": [
+    {
+      "criterion": "Does the reply mention a refund timeline (business days)?",
+      "passed": true,
+      "reason": "the reply satisfies the criterion."
+    }
+  ],
+  "responses": [
+    "I'm sorry about the double charge \u2014 thanks for catching it. I've issued a refund of $18 for the duplicate charge. It should appear in your account within 3-5 business days. Anything else I can help with?"
+  ],
+  "cost_usd": null
+}

@@ -1,0 +1,7 @@
+{
+  "model": "openai:gpt-4o-mini",
+  "responses": {
+    "38ffdbfdb5dacba82856644df7c07c8b537badeb8554524d97431e6059c94b17": "I'm so sorry that happened to you \u2014 that sounds really upsetting, and I completely understand your frustration. I'd like to help right away: I can start a full refund for the soap, which would be back in 3-5 business days. Would you like me to do that?",
+    "c638696bba0f9ed1c4c91dc4bdc4f6850ca37acfdef64885799229a6b6b335dc": "VERDICT: PASS\nREASON: the reply satisfies the criterion."
+  }
+}

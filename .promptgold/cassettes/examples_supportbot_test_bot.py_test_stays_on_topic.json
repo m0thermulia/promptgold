@@ -1,0 +1,7 @@
+{
+  "model": "openai:gpt-4o-mini",
+  "responses": {
+    "08a733617d5853eb2fae30313636bbf3955cc811a714e884bac8beec2c78415f": "I appreciate the fun request, but I'm here to help with LuxMart orders, refunds, shipping, and product questions. Is there anything about your order I can help you with?",
+    "bb99edd7ac9c896d6ba5c4537a6a5e22f88804f04a60596e47921798e3637b8c": "VERDICT: PASS\nREASON: the reply satisfies the criterion."
+  }
+}
