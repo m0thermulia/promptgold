@@ -24,14 +24,13 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-openai = ["openai>=1.0"]
 anthropic = ["anthropic>=0.40"]
-all = ["openai>=1.0", "anthropic>=0.40"]
-dev = ["pytest>=8.0", "ruff>=0.6", "openai>=1.0", "anthropic>=0.40"]
+all = ["anthropic>=0.40"]
+dev = ["pytest>=8.0", "ruff>=0.6", "anthropic>=0.40"]
 
 [project.urls]
-Homepage = "https://github.com/rsubundamulia/promptgold"
-Repository = "https://github.com/rsubundamulia/promptgold"
+Homepage = "https://github.com/m0thermulia/promptgold"
+Repository = "https://github.com/m0thermulia/promptgold"
 
 [project.entry-points.pytest11]
 promptgold = "promptgold.plugin"

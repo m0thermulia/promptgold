@@ -11,6 +11,27 @@ import httpx
 from promptgold.pricing import estimate_tokens
 
 
+def _parse_json_lenient(text: str) -> dict[str, Any]:
+    """Parse the FIRST JSON object in `text`, ignoring trailing garbage.
+
+    Real-world OpenAI-compatible endpoints sometimes append extra bytes
+    after a valid completion object (proxy banners, JSONL tails, duplicated
+    braces). The openai SDK's strict parser dies on these with
+    'Extra data'; we only need the first object, so use raw_decode and
+    discard whatever follows.
+    """
+    stripped = text.lstrip()
+    try:
+        obj, _end = json.JSONDecoder().raw_decode(stripped)
+    except json.JSONDecodeError as e:
+        raise ValueError(
+            f"Endpoint returned unparseable response ({type(e).__name__}): {text[:200]!r}"
+        ) from e
+    if not isinstance(obj, dict):
+        raise ValueError(f"Endpoint returned a non-object JSON value: {type(obj).__name__}")
+    return obj
+
+
 class Model:
     """Unified chat-completion interface.
 
@@ -22,7 +43,11 @@ class Model:
 
     def __init__(self, spec: str, temperature: float = 0.0, max_tokens: int = 1024, **kw: Any):
         if ":" not in spec:
-            raise ValueError(f"Model spec must be 'provider:name', got {spec!r}")
+            raise ValueError(
+                f"Model spec must be 'provider:name', got {spec!r}. "
+                f"Did you mean 'openai:{spec}'? Providers: openai, anthropic, ollama. "
+                "(For OpenAI-compatible endpoints use 'openai:<model>' plus OPENAI_BASE_URL.)"
+            )
         self.provider, self.name = spec.split(":", 1)
         self.temperature = temperature
         self.max_tokens = max_tokens
@@ -42,28 +67,58 @@ class Model:
     # --- providers -------------------------------------------------------
 
     def _openai(self, system: str, user: str, **kw: Any) -> str:
-        import openai
+        """Chat completion via the OpenAI protocol — spoken directly over httpx.
 
-        client = openai.OpenAI()
+        We deliberately do NOT use the openai SDK here: its strict response
+        parser rejects the malformed-but-recoverable JSON some OpenAI-
+        compatible endpoints return (trailing bytes after the completion
+        object). One POST plus lenient parsing covers the whole protocol we
+        need and works with OpenAI, openagentic, and any compatible gateway.
+        """
+        base = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
+        api_key = os.environ.get("OPENAI_API_KEY", "")
+        if not api_key:
+            raise ValueError(
+                "OPENAI_API_KEY is not set. For OpenAI-compatible endpoints also "
+                "set OPENAI_BASE_URL (e.g. https://your-provider/api/v1)."
+            )
+
         messages = []
         if system:
             messages.append({"role": "system", "content": system})
         messages.append({"role": "user", "content": user})
-        resp = client.chat.completions.create(
-            model=self.name,
-            messages=messages,
-            temperature=kw.pop("temperature", self.temperature),
-            max_tokens=kw.pop("max_tokens", self.max_tokens),
+        payload: dict[str, Any] = {
+            "model": self.name,
+            "messages": messages,
+            "temperature": kw.pop("temperature", self.temperature),
+            "max_tokens": kw.pop("max_tokens", self.max_tokens),
             **kw,
+        }
+        r = httpx.post(
+            base.rstrip("/") + "/chat/completions",
+            json=payload,
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            timeout=120,
         )
-        if resp.usage is not None:
+        if r.status_code >= 400:
+            raise RuntimeError(
+                f"OpenAI-compatible endpoint error {r.status_code}: {r.text[:300]}"
+            )
+        data = _parse_json_lenient(r.text)
+
+        usage = data.get("usage")
+        if isinstance(usage, dict) and "prompt_tokens" in usage:
             self.last_usage = {
-                "input": resp.usage.prompt_tokens,
-                "output": resp.usage.completion_tokens,
+                "input": usage["prompt_tokens"],
+                "output": usage.get("completion_tokens", 0),
             }
         else:
             self.last_usage = None
-        return resp.choices[0].message.content or ""
+
+        choices = data.get("choices") or []
+        if not choices:
+            raise ValueError(f"Endpoint returned no choices: {r.text[:200]!r}")
+        return choices[0].get("message", {}).get("content") or ""
 
     def _anthropic(self, system: str, user: str, **kw: Any) -> str:
         import anthropic
