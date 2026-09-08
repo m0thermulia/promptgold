@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "promptgold"
-version = "0.1.0"
-description = "pytest for prompts — write a test, get a baseline, catch regressions in CI"
+version = "0.2.0"
+description = "pytest for prompts — write a test, bless the verdict, catch regressions in CI"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
