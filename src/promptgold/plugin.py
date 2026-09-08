@@ -107,7 +107,10 @@ def _run_prompt_test(item: pytest.Item, fn: Any) -> None:
     try:
         original(**kwargs)
     except Exception as e:
-        test_error = f"{type(e).__name__}: {e}"
+        # First line only: pytest's assertion repr is multi-line and would
+        # wreck table cells and PR comments.
+        msg = str(e).splitlines()[0] if str(e) else type(e).__name__
+        test_error = f"{type(e).__name__}: {msg}"
         raise
     finally:
         set_active_context(None)
@@ -132,8 +135,10 @@ def _run_prompt_test(item: pytest.Item, fn: Any) -> None:
             error=test_error,
         )
         # Even on failure, surface whatever verdicts were recorded so the
-        # report shows WHICH criterion flipped.
-        result.verdicts.extend(_verdict_results(ctx, None))
+        # report shows WHICH criterion flipped. On success the golden-check
+        # paths below extend verdicts (with expected values) instead.
+        if test_error is not None:
+            result.verdicts.extend(_verdict_results(ctx, None))
         _run.tests.append(result)
 
     payload: dict[str, Any] = {
