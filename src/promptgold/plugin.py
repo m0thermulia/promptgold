@@ -114,6 +114,27 @@ def _run_prompt_test(item: pytest.Item, fn: Any) -> None:
         if isinstance(model, cassettes.CassetteModel):
             if path := model.save():
                 print(f"\npromptgold: recorded {model.recorded} call(s) -> {path}")
+        # ALWAYS record the result — including failures — or broken tests
+        # silently vanish from the terminal summary, HTML report, and PR
+        # comment (the one place the failure matters most).
+        result = PromptTestResult(
+            nodeid=item.nodeid,
+            model=model.spec,
+            cost_usd=ctx.total_cost,
+            latency_ms=sum(c["latency_ms"] for c in ctx.calls),
+            cassette=(
+                "recorded"
+                if isinstance(model, cassettes.CassetteModel) and model.recorded
+                else "replayed"
+                if isinstance(model, cassettes.CassetteModel)
+                else "live"
+            ),
+            error=test_error,
+        )
+        # Even on failure, surface whatever verdicts were recorded so the
+        # report shows WHICH criterion flipped.
+        result.verdicts.extend(_verdict_results(ctx, None))
+        _run.tests.append(result)
 
     payload: dict[str, Any] = {
         "model": model.spec,
@@ -121,22 +142,6 @@ def _run_prompt_test(item: pytest.Item, fn: Any) -> None:
         "responses": [c["response"] for c in ctx.calls],
         "cost_usd": ctx.total_cost,
     }
-
-    result = PromptTestResult(
-        nodeid=item.nodeid,
-        model=model.spec,
-        cost_usd=ctx.total_cost,
-        latency_ms=sum(c["latency_ms"] for c in ctx.calls),
-        cassette=(
-            "recorded"
-            if isinstance(model, cassettes.CassetteModel) and model.recorded
-            else "replayed"
-            if isinstance(model, cassettes.CassetteModel)
-            else "live"
-        ),
-        error=test_error,
-    )
-    _run.tests.append(result)
 
     if item.config.getoption("--bless"):
         path = golden.save(item.nodeid, payload)
