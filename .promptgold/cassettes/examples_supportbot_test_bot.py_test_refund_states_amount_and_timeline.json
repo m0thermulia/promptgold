@@ -2,6 +2,7 @@
   "model": "openai:gpt-4o-mini",
   "responses": {
     "a6afc0b67a05387661a67a273e87c92b29f96e9e79d6c6449f0ef41ed5c7c2cd": "I'm sorry about the double charge \u2014 thanks for catching it. I've issued a refund of $18 for the duplicate charge. It should appear in your account within 3-5 business days. Anything else I can help with?",
-    "7f1cdf4118bfd3f6a14ece9955be881897fda1d0ece3a44fdf13d695b792be18": "VERDICT: PASS\nREASON: the reply satisfies the criterion."
+    "7f1cdf4118bfd3f6a14ece9955be881897fda1d0ece3a44fdf13d695b792be18": "VERDICT: PASS\nREASON: the reply satisfies the criterion.",
+    "b6f37fe677ab1a0dbdf919f11743a4ad85bbda2fe6d0409d9717b841a3ea6937": "I'm sorry about the double charge \u2014 thanks for catching it. I've issued a refund of $18 for the duplicate charge. It should appear in your account within 3-5 business days. Anything else I can help with?"
   }
 }

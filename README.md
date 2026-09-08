@@ -2,6 +2,8 @@
 
 **pytest for prompts.** Write a test, bless the verdict, catch regressions in CI.
 
+![demo: bless → break the prompt → watch the build go red](docs/demo.gif)
+
 ```python
 from promptgold import prompt_test, judge, contains
 
@@ -31,6 +33,10 @@ You changed a system prompt. Did it break anything? Today the answer is "vibes" 
 - **Binary LLM-as-judge** — `judge()` returns PASS/FAIL plus a reason, not a 1-5 score. Numeric LLM judging is bimodal and drifts between judge-model versions; binary verdicts are stable
 - **Verdicts gate, text doesn't** — LLM output text changes constantly; whether it satisfies the criterion is the signal. Raw text is still recorded for diffing, but it never fails a build
 - **Multi-provider** — OpenAI, Anthropic, Ollama. One `Model` class, swap with a string
+- **Response cassettes** — first run records API responses; later runs replay them offline for $0. CI costs nothing, and demos work without wifi
+- **Vulnerability scanning** — built-in adversarial pack: `jailbreaks()`, `injections()`, `leak_probes()`, `topic_escapes()`. Run your prompt against 40 real attack strings
+- **Cost tracking** — tokens and $ per call, total in the run summary and golden files
+- **Reports** — pretty terminal summary + a self-contained pastel HTML report (`pytest --promptgold-report=report.html`). No dashboard, no server: it's a file
 - **Zero cloud** — works offline with Ollama, no signups, no telemetry
 
 ## What promptgold is NOT
@@ -119,9 +125,11 @@ instant, free. Commit cassettes alongside golden files and CI costs $0.
 ## Roadmap
 
 - [x] v0.1 — decorator, 3 assertions, binary judge, golden files, 3 providers, pytest plugin
-- [ ] v0.2 — ~~response caching (record/replay cassettes)~~ ✅, ~~cost tracking~~ ✅, JUnit XML
+- [ ] v0.2 — ~~response caching (record/replay cassettes)~~ ✅, ~~cost tracking~~ ✅, ~~JUnit XML~~ ✅, GitHub PR-comment Action
   - cassettes: first run records API responses to `.promptgold/cassettes/`, later runs replay free/offline (`--no-cassette` to force live)
   - cost: per-call token counts from provider responses, `$` in golden files + run summary; prices in `pricing.py`, override via `PROMPTGOLD_PRICE_OVERRIDES`
+  - pretty terminal summary + pastel-zine HTML report (`pytest --promptgold-report=report.html`) — self-contained, offline, no server
+  - adversarial pack (shipped early): `jailbreaks()`, `injections()`, `leak_probes()`, `topic_escapes()` — 40 attack strings
 - [ ] v0.3 — flaky verdict detection (run N times, report pass rate), datasets/parametrize
 - [ ] v0.4 — `promptgold init <prompt-file>` generates candidate test cases
 
