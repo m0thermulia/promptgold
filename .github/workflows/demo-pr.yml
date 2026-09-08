@@ -1,0 +1,30 @@
+name: Demo PR
+
+# Dogfooding: this workflow uses the promptgold action from THIS repo to
+# comment on PRs. It runs the SupportBot suite — offline, via committed
+# cassettes, $0 — so any PR (even from a fork's branch on this repo) gets a
+# promptgold verdict comment.
+
+on:
+  pull_request:
+
+jobs:
+  prompt-tests:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      # Install the package from source (this PR's code) instead of PyPI,
+      # so the action tests what's actually in the PR.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e .
+
+      - uses: ./
+        with:
+          test-path: examples/supportbot/
+          install: "false"

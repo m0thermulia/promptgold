@@ -40,6 +40,12 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         default=None,
         help="Write a self-contained HTML report to PATH after the run.",
     )
+    group.addoption(
+        "--promptgold-markdown",
+        metavar="PATH",
+        default=None,
+        help="Write a GitHub-flavored markdown summary to PATH (for PR comments).",
+    )
 
 
 class GoldenMismatch(AssertionError):
@@ -214,6 +220,14 @@ def pytest_terminal_summary(terminalreporter: Any, config: pytest.Config) -> Non
         out = Path(report_path)
         out.write_text(report.render(_run))
         terminalreporter.write_line(f"promptgold: HTML report -> {out}")
+
+    md_path = config.getoption("--promptgold-markdown")
+    if md_path and _run.tests:
+        from promptgold import markdown
+
+        out = Path(md_path)
+        out.write_text(markdown.render(_run))
+        terminalreporter.write_line(f"promptgold: markdown summary -> {out}")
 
 
 def pytest_configure(config: pytest.Config) -> None:

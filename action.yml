@@ -1,0 +1,110 @@
+name: promptgold
+
+description: >
+  Run promptgold prompt tests and post the results as a PR comment.
+  Verdict deltas, cost, and cassette stats — visible to reviewers even if
+  they've never heard of promptgold.
+
+author: promptgold
+
+branding:
+  icon: shield
+  color: yellow
+
+inputs:
+  test-path:
+    description: Path (or paths, space-separated) passed to pytest.
+    required: false
+    default: "tests/"
+  python-version:
+    description: Python version to run the tests with.
+    required: false
+    default: "3.12"
+  extra-args:
+    description: Extra arguments for pytest (e.g. --no-cassette).
+    required: false
+    default: ""
+  install:
+    description: "Whether to 'pip install promptgold' (set to false to dogfood a local checkout)."
+    required: false
+    default: "true"
+  github-token:
+    description: Token used to post the PR comment (defaults to the workflow token).
+    required: false
+    default: ${{ github.token }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install promptgold
+      if: inputs.install == 'true'
+      shell: bash
+      run: pip install promptgold
+
+    - name: Run prompt tests
+      id: tests
+      shell: bash
+      run: |
+        set +e
+        pytest ${{ inputs.test-path }} \
+          --promptgold-markdown="$RUNNER_TEMP/promptgold-comment.md" \
+          --junitxml="$RUNNER_TEMP/promptgold-junit.xml" \
+          ${{ inputs.extra-args }}
+        code=$?
+        set -e
+        echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+
+    - name: Post PR comment
+      if: always() && github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const fs = require('fs');
+          const path = process.env.RUNNER_TEMP + '/promptgold-comment.md';
+          if (!fs.existsSync(path)) {
+            core.info('No promptgold summary produced — nothing to comment.');
+            return;
+          }
+          const body = fs.readFileSync(path, 'utf8');
+
+          // Update our previous comment instead of stacking new ones.
+          const marker = '<!-- promptgold-summary -->';
+          const tagged = marker + '\n' + body;
+          const { data: comments } = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+          });
+          const previous = comments.find(c => c.body && c.body.includes(marker));
+          if (previous) {
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: previous.id,
+              body: tagged,
+            });
+            core.info(`Updated existing promptgold comment #${previous.id}.`);
+          } else {
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: tagged,
+            });
+            core.info('Posted new promptgold comment.');
+          }
+
+    - name: Fail the check on regressions
+      if: always()
+      shell: bash
+      run: |
+        if [ "${{ steps.tests.outputs.exit_code }}" != "0" ]; then
+          echo "::error::promptgold tests failed"
+          exit 1
+        fi
