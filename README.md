@@ -97,6 +97,18 @@ Model("anthropic:claude-sonnet-4-5")
 Model("ollama:llama3.1")          # fully offline
 ```
 
+**Using a custom or hosted endpoint?** The provider prefix picks the *protocol*, not the vendor. Most gateways (OpenRouter, Together, Groq, DeepSeek, LM Studio, vLLM, openagentic...) speak the OpenAI chat-completions protocol — for those, use `openai:` + the model ID exactly as your provider lists it, and point the SDK at your endpoint:
+
+```bash
+export OPENAI_API_KEY="***"                        # your provider's key
+export OPENAI_BASE_URL="https://your-provider/api/v1"
+```
+```python
+Model("openai:qwen3.8")        # provider listed "qwen3.8" → add "openai:" prefix
+```
+
+How to tell which protocol your endpoint speaks: docs mention "OpenAI-compatible" or `/v1/chat/completions` → `openai:`. Docs mention the Anthropic Messages API → `anthropic:`. Running locally → `ollama:`.
+
 ### 5. Exit codes
 
 Non-zero on any failure or verdict regression. CI just works — GitHub Actions, GitLab, whatever.
