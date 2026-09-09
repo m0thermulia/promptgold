@@ -10,9 +10,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from promptgold.models import Model
 
-# Lazily created judge model — see PROMPTGOLD_JUDGE_MODEL below.
-_judge_model: Model | None = None
-
 JUDGE_PROMPT = """You are grading an LLM response against a criterion.
 
 Criterion: {criterion}
@@ -54,11 +51,13 @@ def resolve_judge_model(model: Model | str | None) -> Model:
     """Pick the judge model.
 
     Default: whatever PROMPTGOLD_JUDGE_MODEL says, else openai:gpt-4o-mini.
+    Read fresh on every call — caching it in a module global meant the env var
+    was honored only for the first judge() in a process and silently ignored
+    afterwards, so a test run could grade with the wrong model.
     WARNING: if you judge with the same model under test, the model grades its
     own homework — biased. Set PROMPTGOLD_JUDGE_MODEL to a different model for
     independence.
     """
-    global _judge_model
     from promptgold.models import Model
 
     if isinstance(model, str):
@@ -66,9 +65,7 @@ def resolve_judge_model(model: Model | str | None) -> Model:
     if model is not None:
         # Any model-like object with .complete (Model, CassetteModel, stubs)
         return model
-    if _judge_model is None:
-        _judge_model = Model(os.environ.get("PROMPTGOLD_JUDGE_MODEL", "openai:gpt-4o-mini"))
-    return _judge_model
+    return Model(os.environ.get("PROMPTGOLD_JUDGE_MODEL", "openai:gpt-4o-mini"))
 
 
 def judge(response: str, criterion: str, model: Model | str | None = None) -> Verdict:
@@ -83,7 +80,12 @@ def judge(response: str, criterion: str, model: Model | str | None = None) -> Ve
     Model resolution order: explicit `model=` arg > PROMPTGOLD_JUDGE_MODEL env >
     the active prompt test's model (so cassette replay covers judge calls too).
     Set PROMPTGOLD_JUDGE_MODEL to a different provider for judge independence.
+
+    Whichever model wins, if a cassette is active for this test the judge is
+    wrapped into it too — otherwise an independent judge model would re-charge
+    on every run and break offline replay (and CI), defeating the point.
     """
+    from promptgold import cassettes
     from promptgold.core import get_active_context
 
     ctx = get_active_context()
@@ -91,6 +93,9 @@ def judge(response: str, criterion: str, model: Model | str | None = None) -> Ve
         m = ctx.model
     else:
         m = resolve_judge_model(model)
+        # Route an independent judge model through the active cassette.
+        if ctx is not None and ctx.nodeid is not None and m is not ctx.model:
+            m = cassettes.get_or_create(m, ctx.nodeid)
     raw = m.complete(system=JUDGE_PROMPT.format(criterion=criterion, response=response))
 
     verdict_match = re.search(r"VERDICT:\s*(PASS|FAIL)", raw, re.IGNORECASE)

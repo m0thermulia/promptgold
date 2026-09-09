@@ -33,6 +33,9 @@ class LLMContext:
     model: Any
     calls: list[dict[str, Any]] = field(default_factory=list)
     verdicts: list[dict[str, Any]] = field(default_factory=list)
+    # pytest nodeid of the running test; set by the plugin so judge() can
+    # record into the same cassette instead of paying for live calls.
+    nodeid: str | None = None
 
     def complete(self, system: str = "", user: str = "", **kwargs: Any) -> str:
         start = time.monotonic()

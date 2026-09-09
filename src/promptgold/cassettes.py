@@ -15,9 +15,46 @@ from typing import Any
 
 CASSETTE_DIR = Path(".promptgold/cassettes")
 
+# Live CassetteModels by (nodeid, model spec). Lets judge() wrap its own
+# model into the SAME per-test cassette, so judge calls replay offline too.
+_REGISTRY: dict[tuple[str, str], CassetteModel] = {}
 
-def _slug(nodeid: str) -> str:
-    return re.sub(r"[^A-Za-z0-9_.-]+", "_", nodeid) + ".json"
+
+def get_or_create(inner: Any, nodeid: str) -> CassetteModel:
+    """Return the shared cassette wrapper for `nodeid` + inner.spec."""
+    key = (nodeid, inner.spec)
+    if key not in _REGISTRY:
+        _REGISTRY[key] = CassetteModel(inner, nodeid)
+    return _REGISTRY[key]
+
+
+def save_all(nodeid: str) -> list[Path]:
+    """Flush every cassette recorded for this test (bot model + judge model)."""
+    saved = []
+    for (nid, _spec), cassette in list(_REGISTRY.items()):
+        if nid == nodeid:
+            if path := cassette.save():
+                saved.append(path)
+    return saved
+
+
+def clear(nodeid: str) -> None:
+    """Drop registry entries for a test once it has finished."""
+    for key in [k for k in _REGISTRY if k[0] == nodeid]:
+        del _REGISTRY[key]
+
+
+def _slug(nodeid: str, model_spec: str = "") -> str:
+    """Cassette filename.
+
+    Includes the model spec when set: a test may record into two models (the
+    one under test and an independent judge), and without the spec in the
+    name the second model's save() overwrites the first's responses.
+    """
+    base = re.sub(r"[^A-Za-z0-9_.-]+", "_", nodeid)
+    if model_spec:
+        base += "__" + re.sub(r"[^A-Za-z0-9_.-]+", "_", model_spec)
+    return base + ".json"
 
 
 def _key(model_spec: str, system: str, user: str) -> str:
@@ -34,10 +71,19 @@ class CassetteModel:
     def __init__(self, inner: Any, nodeid: str):
         self._inner = inner
         self.spec = inner.spec
-        self.path = CASSETTE_DIR / _slug(nodeid)
+        self.path = CASSETTE_DIR / _slug(nodeid, self.spec)
         self._data: dict[str, Any] = {"model": self.spec, "responses": {}}
+        # Fall back to the pre-0.2.1 filename (no model spec) so cassettes
+        # committed before that release still replay instead of silently
+        # falling through to the live API and charging the user.
+        legacy = CASSETTE_DIR / _slug(nodeid)
         if self.path.exists():
             self._data = json.loads(self.path.read_text())
+        elif legacy.exists():
+            self._data = json.loads(legacy.read_text())
+            self._legacy_path = legacy
+        else:
+            self._legacy_path = None
         self._dirty = False
         self.recorded = 0  # calls that hit the real API
         self.replayed = 0  # calls served from the cassette

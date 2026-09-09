@@ -85,8 +85,8 @@ def _run_prompt_test(item: pytest.Item, fn: Any) -> None:
     model_spec = fn._promptgold_model
     model = model_spec if isinstance(model_spec, Model) else Model(model_spec)
     if not item.config.getoption("--no-cassette"):
-        model = cassettes.CassetteModel(model, item.nodeid)
-    ctx = LLMContext(model=model)
+        model = cassettes.get_or_create(model, item.nodeid)
+    ctx = LLMContext(model=model, nodeid=item.nodeid)
 
     original = fn.__wrapped__
     sig = inspect.signature(original)
@@ -114,9 +114,12 @@ def _run_prompt_test(item: pytest.Item, fn: Any) -> None:
         raise
     finally:
         set_active_context(None)
-        if isinstance(model, cassettes.CassetteModel):
-            if path := model.save():
-                print(f"\npromptgold: recorded {model.recorded} call(s) -> {path}")
+        if not item.config.getoption("--no-cassette"):
+            # Flush every cassette for this test — the model under test AND
+            # any judge model that recorded into it.
+            for path in cassettes.save_all(item.nodeid):
+                print(f"\npromptgold: recorded -> {path}")
+            cassettes.clear(item.nodeid)
         # ALWAYS record the result — including failures — or broken tests
         # silently vanish from the terminal summary, HTML report, and PR
         # comment (the one place the failure matters most).
