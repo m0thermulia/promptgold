@@ -17,8 +17,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
-from promptgold.cassettes import CASSETTE_DIR, _key, _slug  # noqa: E402
 from bot import load_system_prompt  # noqa: E402
+
+from promptgold.cassettes import CASSETTE_DIR, _key, _slug  # noqa: E402
 
 MODEL = "openai:gpt-4o-mini"
 SYSTEM = load_system_prompt()

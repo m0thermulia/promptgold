@@ -23,7 +23,7 @@ HERE = Path(__file__).parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent.parent / "src"))
 
-from bot import MODEL, load_system_prompt  # noqa: E402
+from velvet_bot import MODEL, load_system_prompt  # noqa: E402
 
 from promptgold import judge  # noqa: E402
 from promptgold.adversarial import leak_probes  # noqa: E402

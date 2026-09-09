@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "promptgold"
-version = "0.2.0"
+version = "0.3.0"
 description = "pytest for prompts — write a test, bless the verdict, catch regressions in CI"
 readme = "README.md"
 license = "MIT"
@@ -48,3 +48,6 @@ select = ["E", "F", "I", "UP", "B"]
 [tool.ruff.lint.per-file-ignores]
 # Attack strings are data, not code — wrapping them hurts readability.
 "src/promptgold/adversarial.py" = ["E501"]
+# Demo scaffolding: long canned replies and attack strings are data too.
+"examples/supportbot/_record_demo_cassettes.py" = ["E501"]
+"examples/supportbot/_record_broken_cassettes.py" = ["E501"]

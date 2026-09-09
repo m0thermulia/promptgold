@@ -137,12 +137,16 @@ instant, free. Commit cassettes alongside golden files and CI costs $0.
 ## Roadmap
 
 - [x] v0.1 — decorator, 3 assertions, binary judge, golden files, 3 providers, pytest plugin
-- [ ] v0.2 — ~~response caching (record/replay cassettes)~~ ✅, ~~cost tracking~~ ✅, ~~JUnit XML~~ ✅, GitHub PR-comment Action
+- [x] v0.2 — cassettes, cost tracking, JUnit XML, GitHub PR-comment Action
   - cassettes: first run records API responses to `.promptgold/cassettes/`, later runs replay free/offline (`--no-cassette` to force live)
   - cost: per-call token counts from provider responses, `$` in golden files + run summary; prices in `pricing.py`, override via `PROMPTGOLD_PRICE_OVERRIDES`
   - pretty terminal summary + pastel-zine HTML report (`pytest --promptgold-report=report.html`) — self-contained, offline, no server
+  - GitHub Action (`action.yml`) posts verdict deltas + cost as a PR comment; `pytest --promptgold-markdown=PATH` writes the comment body
   - adversarial pack (shipped early): `jailbreaks()`, `injections()`, `leak_probes()`, `topic_escapes()` — 40 attack strings
-- [ ] v0.3 — flaky verdict detection (run N times, report pass rate), datasets/parametrize
+- [x] v0.3 — self-healing prompts + robust OpenAI-compatible provider
+  - `promptgold.heal.heal_prompt()`: a model rewrites a leaking prompt given scan failures; attack text travels as quoted data, never instructions. Demo: `examples/velvet/heal.py` (scan → heal → re-scan loop). Healing proposes, humans adopt.
+  - direct-httpx OpenAI provider with lenient JSON parsing — survives gateways that append garbage after the completion object (the openai SDK died on these). `openai:` = the protocol, any compatible endpoint via `OPENAI_BASE_URL`.
+- [ ] v0.3.x — flaky verdict detection (run N times, report pass rate), datasets/parametrize
 - [ ] v0.4 — `promptgold init <prompt-file>` generates candidate test cases
 
 ## Contributing

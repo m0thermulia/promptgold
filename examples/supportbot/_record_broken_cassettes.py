@@ -21,6 +21,7 @@ sys.path.insert(0, str(_HERE.parent.parent / "src"))
 sys.path.insert(0, str(_HERE))
 
 import _record_demo_cassettes as good  # noqa: E402
+
 from promptgold.cassettes import CASSETTE_DIR, _key, _slug  # noqa: E402
 
 MODEL = good.MODEL

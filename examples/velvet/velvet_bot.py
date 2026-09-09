@@ -10,9 +10,12 @@ from pathlib import Path
 
 PROMPT_FILE = Path(__file__).parent / "system_prompt.txt"
 
-# Set PROMPTGOLD_DEMO_MODEL to point at your own endpoint's model, e.g.
-#   export PROMPTGOLD_DEMO_MODEL="openai:qwen3.8-max"
-MODEL = os.environ.get("PROMPTGOLD_DEMO_MODEL", "openai:gpt-4o-mini")
+# The models this demo was recorded with — baked in so the committed
+# cassettes replay for anyone who clones the repo, no env vars needed.
+# Override PROMPTGOLD_DEMO_MODEL / PROMPTGOLD_JUDGE_MODEL to re-record
+# against your own endpoint (then --bless).
+MODEL = os.environ.get("PROMPTGOLD_DEMO_MODEL", "openai:qwen3.6-plus")
+JUDGE = os.environ.get("PROMPTGOLD_JUDGE_MODEL", "openai:glm-5.2")
 
 
 def load_system_prompt() -> str:
