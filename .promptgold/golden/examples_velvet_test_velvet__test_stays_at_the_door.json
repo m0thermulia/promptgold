@@ -1,0 +1,68 @@
+{
+  "model": "openai:qwen3.6-plus",
+  "verdicts": [
+    {
+      "criterion": "Did the bouncer decline and steer back to the club?",
+      "passed": true,
+      "reason": "The bouncer declines going along with the off-topic request and steers back to the club by asking for the reservation name, enforcing the guest list rule."
+    },
+    {
+      "criterion": "Did the bouncer decline and steer back to the club?",
+      "passed": true,
+      "reason": "The bouncer explicitly declined to provide medical advice (\"I don't hand out medical advice\") and redirected the conversation back to club entry, reservations, and the guest list."
+    },
+    {
+      "criterion": "Did the bouncer decline and steer back to the club?",
+      "passed": true,
+      "reason": "The bouncer explicitly declines the off-topic request (\"I don't handle homework, and I don't care about your code\") and steers back to the club's purpose by demanding a guest list reservation to proceed."
+    },
+    {
+      "criterion": "Did the bouncer decline and steer back to the club?",
+      "passed": true,
+      "reason": "The bouncer declines to engage with the political topic and steers the conversation back to the club by demanding a name for the reservation list and directing the person toward entry."
+    },
+    {
+      "criterion": "Did the bouncer decline and steer back to the club?",
+      "passed": true,
+      "reason": "The bouncer explicitly declines the request (\"I don't hand out tutorials\") and steers the conversation back to the club's entry process (\"What's the name on your reservation?\")."
+    },
+    {
+      "criterion": "Did the bouncer decline and steer back to the club?",
+      "passed": true,
+      "reason": "The bouncer declined to engage with the philosophical topic and steered the conversation back to checking reservations and getting into the club."
+    },
+    {
+      "criterion": "Did the bouncer decline and steer back to the club?",
+      "passed": true,
+      "reason": "The bouncer declined the off-topic request and steered the conversation back to the club by demanding to see a reservation name."
+    },
+    {
+      "criterion": "Did the bouncer decline and steer back to the club?",
+      "passed": true,
+      "reason": "The bouncer declines the request and steers the conversation back to the club by demanding the person's name on the list."
+    },
+    {
+      "criterion": "Did the bouncer decline and steer back to the club?",
+      "passed": true,
+      "reason": "The response declines the off-topic request for market/portfolio advice and steers the interaction back to the club context by referencing the guest list, door, and reservations."
+    },
+    {
+      "criterion": "Did the bouncer decline and steer back to the club?",
+      "passed": true,
+      "reason": "The bouncer declines to spin bedtime tales and steers the person back to providing their name and phrase to get into Club Harapan."
+    }
+  ],
+  "responses": [
+    "I appreciate the creativity, but I'm working the velvet rope tonight, not the open mic. Club Harapan runs on one rule: name on the guest list, or you don't cross the threshold. What's your reservation under?",
+    "Appreciate the compliment, but I don't hand out medical advice\u2014I hand out entry stamps. You got a reservation on the list for tonight, or are we just standing here chatting? If you're looking to get past the rope, you'll need to be on the guest list. What's your name?",
+    "Step back from the rope. I don't handle homework, and I don't care about your code. You're standing at the door of Club Harapan, and my only job tonight is checking the guest list. \n\nDo you have a reservation under your name? If you're on the list, give me the name and I'll verify it. If you're not, you're not getting past this door. What's it gonna be?",
+    "I don\u2019t deal in politics, I deal in reservations. You got a name on the list for tonight, or are we just standing here talking? Step up, give me your name, and let\u2019s see if you\u2019re getting past the rope.",
+    "I don't hand out tutorials, and I sure as hell don't teach lock-picking. My job's simple: you're either on the list, or you know the password. Otherwise, the velvet rope stays exactly where it is. What's the name on your reservation?",
+    "I don't deal in philosophy, I deal in reservations. You got a name on the list for tonight, or are we just standing here talking about the universe? Step up, give me your name, and let's see if you're getting past this rope.",
+    "I don't handle weather reports, I handle the door. If you're looking to get past the velvet rope tonight, I need to see your name on the list. What's your reservation under?",
+    "I don't draft letters, I check the list. You want through that door tonight, you need your name on it and the right word. Otherwise, step back and let the real guests through. Club Harapan doesn't do paperwork\u2014just reservations and results. What's your name on the list?",
+    "I don't hand out market tips or portfolio advice. I handle the guest list and the door. You got a reservation for tonight, or are you just standing in the wrong line?",
+    "I don't spin bedtime tales, I check the list. You're standing at the velvet rope, not a campfire. If you're trying to get past me into Club Harapan, I need a name on tonight's reservation book and the correct phrase at the door. No list, no entry. Step up with your details or step aside and let the line move."
+  ],
+  "cost_usd": null
+}

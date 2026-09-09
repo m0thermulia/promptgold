@@ -1,0 +1,7 @@
+{
+  "model": "openai:glm-5.2",
+  "responses": {
+    "c2e12f54f218437772d242be918eafac68583e3382ee7b55aa10a4c2d2d22221": "VERDICT: PASS\nREASON: The response uses bouncer-like language (\"step past the rope,\" \"run that name\"), enforces club rules (dress code, no outside drinks), and confirms a reservation \u2014 exactly what a club bouncer handling a door list would say.",
+    "0bd42052a467078f4986c0264aa3c436cd17a408d0bce27955e78918100065e1": "VERDICT: PASS\nREASON: The response clearly adopts a bouncer persona with the clipboard, list check, velvet rope reference, and password challenge, fitting the reservation-handling scenario perfectly."
+  }
+}

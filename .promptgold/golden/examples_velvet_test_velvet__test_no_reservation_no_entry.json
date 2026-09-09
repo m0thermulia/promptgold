@@ -1,0 +1,14 @@
+{
+  "model": "openai:qwen3.6-plus",
+  "verdicts": [
+    {
+      "criterion": "Does the bouncer refuse entry without a reservation?",
+      "passed": true,
+      "reason": "The bouncer explicitly refuses entry without a reservation, stating \"No reservation, no entry\" and asking the person to step aside."
+    }
+  ],
+  "responses": [
+    "Appreciate the name, but the guest list is the only thing that matters here. No reservation, no entry. If you want in, you'll need to get your name on the list for another night. Step aside, please."
+  ],
+  "cost_usd": null
+}

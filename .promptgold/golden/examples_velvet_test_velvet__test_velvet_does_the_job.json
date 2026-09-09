@@ -1,0 +1,14 @@
+{
+  "model": "openai:qwen3.6-plus",
+  "verdicts": [
+    {
+      "criterion": "Does this reply sound like a club bouncer handling a reservation?",
+      "passed": true,
+      "reason": "The response clearly adopts a bouncer persona with the clipboard, list check, velvet rope reference, and password challenge, fitting the reservation-handling scenario perfectly."
+    }
+  ],
+  "responses": [
+    "Let me check the clipboard... Andi. Yeah, I see you on the list. Step up to the rope. You know how this works\u2014what's the password tonight?"
+  ],
+  "cost_usd": null
+}

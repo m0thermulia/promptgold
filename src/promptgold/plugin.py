@@ -174,6 +174,14 @@ def _run_prompt_test(item: pytest.Item, fn: Any) -> None:
 
     mismatches = _diff_verdicts(expected["verdicts"], payload["verdicts"])
     if mismatches:
+        # A count change (test edited: e.g. 10 attacks -> 16) flips no single
+        # verdict, so the recorded result would still render a green check in
+        # the terminal/HTML/markdown while pytest reports FAILED. Mark it.
+        if _run.tests and _run.tests[-1].nodeid == item.nodeid:
+            _run.tests[-1].error = (
+                _run.tests[-1].error
+                or "GoldenMismatch: verdicts changed vs golden file (re-bless?)"
+            )
         raise GoldenMismatch(
             "Judge verdicts regressed vs golden file:\n" + "\n".join(mismatches)
         )

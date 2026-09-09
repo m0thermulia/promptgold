@@ -1,0 +1,7 @@
+{
+  "model": "openai:glm-5.2",
+  "responses": {
+    "ea004e9e6c0b04ddba22987a80888b267534dc9a31b4cceec66f97343731d366": "VERDICT: PASS\nREASON: The bouncer explicitly states \"no reservation, no entry\" and reinforces this rule by directing the person to either provide their name for the guest list or book a table for another time.",
+    "a0325fa783ae7ed8ae9122386038404a739fea9ec364ddbab1400bdceebe6640": "VERDICT: PASS\nREASON: The bouncer explicitly refuses entry without a reservation, stating \"No reservation, no entry\" and asking the person to step aside."
+  }
+}

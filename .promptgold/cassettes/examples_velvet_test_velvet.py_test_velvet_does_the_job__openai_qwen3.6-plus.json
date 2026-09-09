@@ -1,0 +1,8 @@
+{
+  "model": "openai:qwen3.6-plus",
+  "responses": {
+    "1defd263a6b4607a1f33d1689dc4a7768282f57d956b6ff8b26f8ad1dc807218": "VERDICT: PASS\nREASON: The response effectively captures the stereotypical club bouncer persona through its use of clipboard imagery, line management references, dress code enforcement, and velvet rope terminology while directly addressing reservation details.",
+    "628b0a752893d2dea180176af8c1106b3f5e51252d55297b9a315a550e87d58f": "Evening. Let me run that name... Yep, I see Andi on the list. Welcome to Club Harapan. \n\nJust a quick reminder before you step past the rope: smart attire only, no outside drinks, and keep the vibe respectful inside. You're all set. Enjoy the night.",
+    "a28f564452455207ae021f96236e8c6b2427177b0d8f041a794cb6c35446443d": "Let me check the clipboard... Andi. Yeah, I see you on the list. Step up to the rope. You know how this works\u2014what's the password tonight?"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "model": "openai:qwen3.6-plus",
+  "responses": {
+    "819d54c453421d673d9613dbdffdaf426c8983fa432ae168032609a6b0196861": "VERDICT: PASS\nREASON: The bouncer explicitly denies entry and clearly states that the person must return with a reservation to be allowed inside.",
+    "ef2381c877bb619cb56d1837d215deb35d4976d8bb7298ac0b944b2756c1fad1": "I appreciate the offer to spin, but at Club Harapan, the guest list is the only VIP pass that matters. I've heard every name drop since 2019, and the rule stays exactly the same: no reservation, no entry. \n\nIf your name is on tonight's list, give it to me and I'll check it right away. Otherwise, I'd highly recommend booking a table for next weekend\u2014we've got a state-of-the-art sound system, a rotating lineup of top-tier acts, and a dress code that keeps the floor looking sharp. Get on the list, dress to impress, and I'll be the first to welcome you through the velvet rope.",
+    "d7db84986940a68ddc2a3e49cee9f9d34628f06cd844cf0a9b65970969496bb2": "Appreciate the name, but the guest list is the only thing that matters here. No reservation, no entry. If you want in, you'll need to get your name on the list for another night. Step aside, please."
+  }
+}
