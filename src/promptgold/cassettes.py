@@ -1,8 +1,8 @@
 """VCR-style response cassettes: record API responses once, replay free forever.
 
 A cassette is a JSON file mapping a hash of (model spec, system, user) to the
-recorded response text. If a cassette exists, the real API is never called —
-prompt tests run offline and free. Missing entries are recorded on first run.
+recorded response text. Matching entries replay without calling the real API.
+Missing entries are recorded by default; offline mode raises instead.
 """
 
 from __future__ import annotations
@@ -20,11 +20,19 @@ CASSETTE_DIR = Path(".promptgold/cassettes")
 _REGISTRY: dict[tuple[str, str], CassetteModel] = {}
 
 
-def get_or_create(inner: Any, nodeid: str) -> CassetteModel:
+class OfflineCassetteMiss(RuntimeError):
+    """A replay-only call has no matching recorded response."""
+
+
+def get_or_create(inner: Any, nodeid: str, *, offline: bool = False) -> CassetteModel:
     """Return the shared cassette wrapper for `nodeid` + inner.spec."""
     key = (nodeid, inner.spec)
     if key not in _REGISTRY:
-        _REGISTRY[key] = CassetteModel(inner, nodeid)
+        _REGISTRY[key] = CassetteModel(inner, nodeid, offline=offline)
+    elif offline:
+        # A wrapper created earlier (e.g. by a fixture) must not weaken the
+        # active test's policy. Once offline, keep it so until clear().
+        _REGISTRY[key].offline = True
     return _REGISTRY[key]
 
 
@@ -68,8 +76,10 @@ def _key(model_spec: str, system: str, user: str) -> str:
 class CassetteModel:
     """Wraps a Model: replay recorded responses, record misses to disk."""
 
-    def __init__(self, inner: Any, nodeid: str):
+    def __init__(self, inner: Any, nodeid: str, *, offline: bool = False):
         self._inner = inner
+        self.nodeid = nodeid
+        self.offline = offline
         self.spec = inner.spec
         self.path = CASSETTE_DIR / _slug(nodeid, self.spec)
         self._data: dict[str, Any] = {"model": self.spec, "responses": {}}
@@ -99,6 +109,12 @@ class CassetteModel:
         if key in responses:
             self.replayed += 1
             return responses[key]
+        if self.offline:
+            raise OfflineCassetteMiss(
+                f"No recorded response for {self.nodeid} ({self.spec}) in {self.path}; "
+                "--offline forbids live model calls. Restore the matching cassette "
+                "or explicitly record it in an online run."
+            )
         text = self._inner.complete(system=system, user=user, **kwargs)
         responses[key] = text
         self._dirty = True

@@ -128,11 +128,28 @@ Or per-call: `judge(response, "...", model="anthropic:claude-sonnet-4-5")`.
 ## Response cassettes (record once, replay free)
 
 Every prompt test runs through a VCR-style cassette in `.promptgold/cassettes/`.
-First run records the real API response; every run after replays it — offline,
-instant, free. Commit cassettes alongside golden files and CI costs $0.
+Matching responses replay instantly for free. By default, **missing responses
+call the live model and are recorded** — even when a cassette file exists.
 
-- Prompt changed? Delete that test's cassette and rerun to re-record.
-- `pytest --no-cassette` forces live API calls.
+For replay-only runs (recommended in CI):
+
+```bash
+pytest --offline
+```
+
+`--offline` raises `OfflineCassetteMiss` on a missing cassette or response,
+without calling the model or recording anything. The error identifies the test,
+model, and cassette path. This covers `llm.complete()` and `judge()` within
+`@prompt_test`, including an independent judge selected by environment variable
+or `model=`. Existing and legacy cassette filenames both replay unchanged.
+It is not a network sandbox: direct SDK/HTTP calls or standalone model calls
+outside this cassette path are not intercepted.
+
+- Commit matching bot and judge cassettes alongside golden files.
+- On a miss, restore the matching cassette or deliberately run without `--offline`
+  to record it. **Recording may incur API charges.**
+- `pytest --no-cassette` forces live API calls and cannot be combined with `--offline`.
+- Without `--offline`, existing record-on-miss behavior is unchanged.
 
 ## Roadmap
 

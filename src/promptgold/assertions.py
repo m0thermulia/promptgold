@@ -95,7 +95,7 @@ def judge(response: str, criterion: str, model: Model | str | None = None) -> Ve
         m = resolve_judge_model(model)
         # Route an independent judge model through the active cassette.
         if ctx is not None and ctx.nodeid is not None and m is not ctx.model:
-            m = cassettes.get_or_create(m, ctx.nodeid)
+            m = cassettes.get_or_create(m, ctx.nodeid, offline=ctx.offline)
     raw = m.complete(system=JUDGE_PROMPT.format(criterion=criterion, response=response))
 
     verdict_match = re.search(r"VERDICT:\s*(PASS|FAIL)", raw, re.IGNORECASE)

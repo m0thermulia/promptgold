@@ -29,6 +29,12 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         help="Run prompt tests without comparing against golden files.",
     )
     group.addoption(
+        "--offline",
+        action="store_true",
+        default=False,
+        help="Replay cassettes only; fail on missing responses without calling models.",
+    )
+    group.addoption(
         "--no-cassette",
         action="store_true",
         default=False,
@@ -85,8 +91,12 @@ def _run_prompt_test(item: pytest.Item, fn: Any) -> None:
     model_spec = fn._promptgold_model
     model = model_spec if isinstance(model_spec, Model) else Model(model_spec)
     if not item.config.getoption("--no-cassette"):
-        model = cassettes.get_or_create(model, item.nodeid)
-    ctx = LLMContext(model=model, nodeid=item.nodeid)
+        model = cassettes.get_or_create(
+            model, item.nodeid, offline=item.config.getoption("--offline")
+        )
+    ctx = LLMContext(
+        model=model, nodeid=item.nodeid, offline=item.config.getoption("--offline")
+    )
 
     original = fn.__wrapped__
     sig = inspect.signature(original)
@@ -252,6 +262,8 @@ def pytest_terminal_summary(terminalreporter: Any, config: pytest.Config) -> Non
 
 
 def pytest_configure(config: pytest.Config) -> None:
+    if config.getoption("--offline") and config.getoption("--no-cassette"):
+        raise pytest.UsageError("--offline cannot be combined with --no-cassette")
     config.addinivalue_line(
         "markers", "promptgold: mark a test as a prompt regression test"
     )

@@ -36,6 +36,8 @@ class LLMContext:
     # pytest nodeid of the running test; set by the plugin so judge() can
     # record into the same cassette instead of paying for live calls.
     nodeid: str | None = None
+    # Propagate replay-only policy to independently resolved judge models.
+    offline: bool = False
 
     def complete(self, system: str = "", user: str = "", **kwargs: Any) -> str:
         start = time.monotonic()
