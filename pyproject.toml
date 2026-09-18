@@ -9,7 +9,7 @@ description = "pytest for prompts — write a test, bless the verdict, catch reg
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
-authors = [{ name = "rsubundamulia" }]
+authors = [{ name = "m0thermulia" }]
 keywords = ["llm", "prompt", "testing", "pytest", "evals", "regression"]
 classifiers = [
     "Development Status :: 3 - Alpha",
