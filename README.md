@@ -24,6 +24,8 @@ $ pytest                  # later runs fail if a verdict flips PASS -> FAIL
 
 That's it. Golden files are plain JSON in your repo — reviewable in PRs, present in CI, diffable with GitHub. No database, no cloud, no account.
 
+> The example above is a **live** prompt test — it calls a real model, so it needs `OPENAI_API_KEY` set. `pytest` on its own runs promptgold's own offline suite; your prompt tests run when you point it at them (`pytest examples/`). Once a test has run, cassettes replay it for free.
+
 ## Why promptgold
 
 You changed a system prompt. Did it break anything? Today the answer is "vibes" — you eyeball a few outputs and ship it. promptgold makes prompt changes testable like code changes:
